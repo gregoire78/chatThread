@@ -9,7 +9,7 @@ const client = new tmi.client({
     secure: true,
     reconnect: true
   },
-  channels: ['sardoche', 'gotaga', 'loeya', 'mistermv', 'ponce', 'shaunz', 'peteur_pan', 'domingo', 'squeezielive', 'fantabobshow']
+  channels: ['mathox', 'sardoche', 'gotaga', 'loeya', 'mistermv', 'ponce', 'shaunz', 'peteur_pan', 'domingo', 'squeezielive', 'fantabobshow']
 });
 function App() {
 
