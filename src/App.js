@@ -3,12 +3,13 @@ import tmi from 'tmi.js';
 import _ from 'lodash';
 import moment from 'moment';
 import uuid from 'uuid/v4';
+import './App.css';
 const client = new tmi.client({
   connection: {
     secure: true,
     reconnect: true
   },
-  channels: ['sardoche', 'gotaga', 'loeya', 'mistermv', 'ponce', 'shaunz', 'peteur_pan', 'domingo', 'squeezielive']
+  channels: ['sardoche', 'gotaga', 'loeya', 'mistermv', 'ponce', 'shaunz', 'peteur_pan', 'domingo', 'squeezielive', 'fantabobshow']
 });
 function App() {
 
@@ -104,7 +105,16 @@ function App() {
             return (
               <div key={channel}>
                 <p>{channel}</p>
-                {chatBans.get(channel).map(chatBan => <p key={chatBan.id}>{chatBan.username}</p>)}
+                {chatBans.get(channel).map(chatBan => {
+                  return <div key={chatBan.id}>
+                    <p>{chatBan.status} : {chatBan.username}</p>
+                    <ul>
+                      {chatBan.messages.map((message) =>
+                        <li key={message.id}>({message.ts}) {message.message}</li>
+                      )}
+                    </ul>
+                  </div>
+                })}
               </div>)
           })}
         </div>}
