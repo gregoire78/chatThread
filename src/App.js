@@ -32,6 +32,7 @@ function useInterval(callback, delay) {
 function App() {
   const channels = [
     'mathox',
+    'aypierre',
     'wingobear',
     'kennystream',
     'sardoche',
@@ -43,7 +44,8 @@ function App() {
     'peteur_pan',
     'domingo',
     'squeezielive',
-    'fantabobshow'];
+    'fantabobshow',
+    'zerator'];
 
   const [connecting, setConnecting] = useState(false);
   const [rooms, setRooms] = useState([]);
@@ -139,13 +141,14 @@ function App() {
     client.on("messagedeleted", (channel, username, deletedMessage, userstate) => {
       let chat = { id: uuid(), status: "message", message: deletedMessage, channel, ts: (userstate["tmi-sent-ts"] ? moment(userstate["tmi-sent-ts"], "x").format('LT') : moment().format('LT')), ts_global: moment().valueOf() };
       let messageDeleted = { id: uuid(), status: "messagedeleted", username, channel, ts_global: moment().valueOf(), messages: [chat], userstate };
-      console.log("%cmessagedeleted", 'color: orange', channel, username, messageDeleted)
+      console.log("%cmessagedeleted", 'color: orange', channel, username, messageDeleted);
+      setChatBans(channel, messageDeleted);
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => console.log(infoStreams), [infoStreams])
+  //useEffect(() => console.log(infoStreams), [infoStreams])
 
   return (
     <div className="App">
@@ -167,7 +170,7 @@ function App() {
                 <p>{channel}<span>{infos && infos.type === "live" && "🔴"}</span></p>
                 {chatBans.get(channel) && chatBans.get(channel).map(chatBan => {
                   return <div key={chatBan.id}>
-                    <p>{chatBan.status} : {chatBan.username}</p>
+                    <p>{chatBan.status} : {chatBan.username} {chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</p>
                     <ul>
                       {chatBan.messages.map((message) =>
                         <li key={message.id}>({message.ts}) {message.message}</li>
