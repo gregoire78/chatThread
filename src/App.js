@@ -57,7 +57,7 @@ function App() {
   const setChatThreads = (channel, chat) => {
     _setChatThreads(prevState => {
       const y = prevState.get(channel)
-      return myStateRef.current = new Map(prevState).set(channel, y ? [...y.slice(-99), chat] : [chat]);
+      return myStateRef.current = new Map(prevState).set(channel, y ? [...y.slice(-199), chat] : [chat]);
     });
   };
   const setChatBans = (channel, ban) => {
@@ -119,8 +119,8 @@ function App() {
     client.on("timeout", (channel, username, reason, duration, userstate) => {
       //const channelDetails = _.find(channelsDetails, ['channel', channel.slice(1)]);
       const messages = myStateRef.current.get(channel).filter((message) => message.user ? username === message.user.username : false);
-      let to = { id: uuid(), status: "to", username, channel, reason, duration, ts_global: moment().valueOf(), messages, userstate };
-      console.log("%cto", 'color: orange', channel, username, to);
+      let to = { id: uuid(), status: "timeout", username, channel, reason, duration, ts_global: moment().valueOf(), messages, userstate, color: 'orange' };
+      console.log("%ctimeout", 'color: orange', channel, username, to);
       setChatBans(channel, to);
       //setChatThreads([...chatThreads.slice(-199), to]);
       //this.openNotification(`${channel} TO`, `${username} est reduit au silence pour ${duration}s`, channelDetails.infoChannel.profile_image_url)
@@ -130,7 +130,7 @@ function App() {
     client.on("ban", (channel, username, reason, userstate) => {
       //const channelDetails = _.find(channelsDetails, ['channel', channel.slice(1)]);
       const messages = myStateRef.current.get(channel).filter((message) => message.user ? username === message.user.username : false)
-      let ban = { id: uuid(), status: "ban", username, channel, reason, ts_global: moment().valueOf(), messages, userstate };
+      let ban = { id: uuid(), status: "ban", username, channel, reason, ts_global: moment().valueOf(), messages, userstate, color: 'red' };
       console.log("%cban", 'color: red', channel, username, ban);
       setChatBans(channel, ban);
       //setChatThreads([...chatThreads.slice(-199), ban]);
@@ -140,7 +140,7 @@ function App() {
 
     client.on("messagedeleted", (channel, username, deletedMessage, userstate) => {
       let chat = { id: uuid(), status: "message", message: deletedMessage, channel, ts: (userstate["tmi-sent-ts"] ? moment(userstate["tmi-sent-ts"], "x").format('LT') : moment().format('LT')), ts_global: moment().valueOf() };
-      let messageDeleted = { id: uuid(), status: "messagedeleted", username, channel, ts_global: moment().valueOf(), messages: [chat], userstate };
+      let messageDeleted = { id: uuid(), status: "messagedeleted", username, channel, ts_global: moment().valueOf(), messages: [chat], userstate, color: 'grey' };
       console.log("%cmessagedeleted", 'color: orange', channel, username, messageDeleted);
       setChatBans(channel, messageDeleted);
     });
@@ -166,18 +166,20 @@ function App() {
           {[...chatThreads.keys()].map((channel) => {
             const infos = infoStreams.find((infoStream) => "#" + infoStream.user_name.toLowerCase() === channel);
             return (
-              <div key={channel}>
+              <div className="channel" key={channel}>
                 <p>{channel}<span>{infos && infos.type === "live" && "🔴"}</span></p>
-                {chatBans.get(channel) && chatBans.get(channel).map(chatBan => {
-                  return <div key={chatBan.id}>
-                    <p>{chatBan.status} : {chatBan.username} {chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</p>
-                    <ul>
-                      {chatBan.messages.map((message) =>
-                        <li key={message.id}>({message.ts}) {message.message}</li>
-                      )}
-                    </ul>
-                  </div>
-                })}
+                <div style={{ maxHeight: 500, overflow: 'auto' }}>
+                  {chatBans.get(channel) && chatBans.get(channel).map(chatBan => {
+                    return <div key={chatBan.id}>
+                      <p><span style={{ color: chatBan.color }}>{chatBan.status}</span> : {chatBan.username} {chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</p>
+                      <ul>
+                        {chatBan.messages.map((message) =>
+                          <li key={message.id}>({message.ts}) {message.message}</li>
+                        )}
+                      </ul>
+                    </div>
+                  })}
+                </div>
               </div>)
           })}
         </div>}

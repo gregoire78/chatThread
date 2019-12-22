@@ -5,3 +5,11 @@ p {
 ul {
   margin: 0;
 }
+
+.channel:nth-child(odd) {
+  background-color: whitesmoke;
+}
+
+.channel:nth-child(2n) {
+  background-color: white;
+}
