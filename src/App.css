@@ -6,10 +6,19 @@ ul {
   margin: 0;
 }
 
-.channel:nth-child(odd) {
+/*.channel:nth-child(odd) {
   background-color: whitesmoke;
 }
 
 .channel:nth-child(2n) {
   background-color: white;
+}*/
+
+.channel {
+  background-color: whitesmoke;
+}
+
+.channel .title {
+  height: 21px;
+  overflow: hidden;
 }

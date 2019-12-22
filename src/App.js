@@ -5,9 +5,15 @@ import moment from 'moment';
 import 'moment/locale/fr';
 import uuid from 'uuid/v4';
 import axios from 'axios';
+import { WidthProvider, Responsive } from "react-grid-layout";
+
+import '../node_modules/react-grid-layout/css/styles.css';
+import '../node_modules/react-resizable/css/styles.css';
 import './App.css';
 
 moment.locale('fr');
+const ResponsiveGridLayout = WidthProvider(Responsive);
+const originalLayout = getFromLS("layouts") || {};
 
 function useInterval(callback, delay) {
   const savedCallback = useRef();
@@ -45,7 +51,8 @@ function App() {
     'domingo',
     'squeezielive',
     'fantabobshow',
-    'zerator'];
+    'zerator'
+  ];
 
   const [connecting, setConnecting] = useState(false);
   const [rooms, setRooms] = useState([]);
@@ -54,6 +61,21 @@ function App() {
   const [infoStreams, setInfoStreams] = useState([]);
   const myStateRef = useRef(chatThreads);
   const chatBansRef = useRef(chatBans);
+  const [layouts, setLayouts] = useState(JSON.parse(JSON.stringify(originalLayout)));
+  const [layout, setLayout] = useState(
+    _.map(channels, (item, i) => {
+      const w = 3;
+      const h = 3;
+      return {
+        x: Math.floor((i * 12 / 4) % 12),
+        y: Infinity,
+        w: w,
+        h: h,
+        i: item,
+        channel: "#" + item
+      };
+    })
+  );
   const setChatThreads = (channel, chat) => {
     _setChatThreads(prevState => {
       const y = prevState.get(channel)
@@ -144,11 +166,15 @@ function App() {
       console.log("%cmessagedeleted", 'color: orange', channel, username, messageDeleted);
       setChatBans(channel, messageDeleted);
     });
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   //useEffect(() => console.log(infoStreams), [infoStreams])
+
+  const onLayoutChange = (layout, layouts) => {
+    saveToLS("layouts", layouts);
+    setLayouts(layouts);
+  }
 
   return (
     <div className="App">
@@ -162,29 +188,61 @@ function App() {
               </div>)
           })}
         <hr />*/}
-
-          {[...chatThreads.keys()].map((channel) => {
-            const infos = infoStreams.find((infoStream) => "#" + infoStream.user_name.toLowerCase() === channel);
-            return (
-              <div className="channel" key={channel}>
-                <p>{channel}<span>{infos && infos.type === "live" && "🔴"}</span></p>
-                <div style={{ maxHeight: 500, overflow: 'auto' }}>
-                  {chatBans.get(channel) && chatBans.get(channel).map(chatBan => {
-                    return <div key={chatBan.id}>
-                      <p><span style={{ color: chatBan.color }}>{chatBan.status}</span> : {chatBan.username} {chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</p>
-                      <ul>
-                        {chatBan.messages.map((message) =>
-                          <li key={message.id}>({message.ts}) {message.message}</li>
-                        )}
-                      </ul>
-                    </div>
-                  })}
-                </div>
-              </div>)
-          })}
+          <ResponsiveGridLayout
+            className="layout"
+            cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+            measureBeforeMount={true}
+            layouts={layouts}
+            onLayoutChange={onLayoutChange}
+            verticalCompact={true}
+            compactType="vertical"
+          >
+            {[...chatThreads.keys()].map((channel) => {
+              const infos = infoStreams.find((infoStream) => "#" + infoStream.user_name.toLowerCase() === channel);
+              return (
+                <div data-grid={layout.find((l) => l.channel === channel)} className="channel" key={channel}>
+                  <p className="title">{channel}<span>{infos && infos.type === "live" && "🔴"}</span></p>
+                  <div style={{ maxHeight: 'calc(100% - 21px)', overflow: 'auto' }}>
+                    {chatBans.get(channel) && chatBans.get(channel).map(chatBan => {
+                      return <div key={chatBan.id}>
+                        <p><span style={{ color: chatBan.color }}>{chatBan.status}</span> : {chatBan.username} {chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</p>
+                        <ul>
+                          {chatBan.messages.map((message) =>
+                            <li key={message.id}>({message.ts}) {message.message}</li>
+                          )}
+                        </ul>
+                      </div>
+                    })}
+                  </div>
+                </div>)
+            })}
+          </ResponsiveGridLayout>
         </div>}
     </div>
   );
+}
+
+function getFromLS(key) {
+  let ls = {};
+  if (global.localStorage) {
+    try {
+      ls = JSON.parse(global.localStorage.getItem("ct-1")) || {};
+    } catch (e) {
+      /*Ignore*/
+    }
+  }
+  return ls[key];
+}
+
+function saveToLS(key, value) {
+  if (global.localStorage) {
+    global.localStorage.setItem(
+      "ct-1",
+      JSON.stringify({
+        [key]: value
+      })
+    );
+  }
 }
 
 export default App;
