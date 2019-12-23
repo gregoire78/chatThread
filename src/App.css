@@ -18,7 +18,12 @@ ul {
   background-color: whitesmoke;
 }
 
-.channel .title {
+.title {
   height: 21px;
   overflow: hidden;
+  opacity: .3;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background-color: wheat;
 }

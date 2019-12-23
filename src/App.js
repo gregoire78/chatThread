@@ -13,7 +13,7 @@ import './App.css';
 
 moment.locale('fr');
 const ResponsiveGridLayout = WidthProvider(Responsive);
-const originalLayout = getFromLS("layouts") || {};
+//const originalLayout = getFromLS("layouts") || {};
 
 function useInterval(callback, delay) {
   const savedCallback = useRef();
@@ -54,28 +54,29 @@ function App() {
     'zerator'
   ];
 
-  const [connecting, setConnecting] = useState(false);
+  const generateLayout = () => {
+    return _.map(channels, (item, i) => {
+      const w = 3;
+      const h = 1;
+      return {
+        x: Math.floor((i * 12 / 4) % 12),
+        y: 0,
+        w: w,
+        h: h,
+        i: "#" + item,
+      };
+    });
+  }
+
+  const [connecting, setConnecting] = useState(true);
   const [rooms, setRooms] = useState([]);
   const [chatThreads, _setChatThreads] = useState(new Map());
   const [chatBans, _setBans] = useState(new Map());
   const [infoStreams, setInfoStreams] = useState([]);
   const myStateRef = useRef(chatThreads);
   const chatBansRef = useRef(chatBans);
-  const [layouts, setLayouts] = useState(JSON.parse(JSON.stringify(originalLayout)));
-  const [layout, setLayout] = useState(
-    _.map(channels, (item, i) => {
-      const w = 3;
-      const h = 3;
-      return {
-        x: Math.floor((i * 12 / 4) % 12),
-        y: Infinity,
-        w: w,
-        h: h,
-        i: item,
-        channel: "#" + item
-      };
-    })
-  );
+  const [layouts, setLayouts] = useState(JSON.parse(JSON.stringify(getFromLS("layouts") || { lg: generateLayout() })));
+
   const setChatThreads = (channel, chat) => {
     _setChatThreads(prevState => {
       const y = prevState.get(channel)
@@ -141,7 +142,7 @@ function App() {
     client.on("timeout", (channel, username, reason, duration, userstate) => {
       //const channelDetails = _.find(channelsDetails, ['channel', channel.slice(1)]);
       const messages = myStateRef.current.get(channel).filter((message) => message.user ? username === message.user.username : false);
-      let to = { id: uuid(), status: "timeout", username, channel, reason, duration, ts_global: moment().valueOf(), messages, userstate, color: 'orange' };
+      let to = { id: uuid(), status: "timeout", username, channel, reason, duration, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages, userstate, color: 'orange' };
       console.log("%ctimeout", 'color: orange', channel, username, to);
       setChatBans(channel, to);
       //setChatThreads([...chatThreads.slice(-199), to]);
@@ -152,7 +153,7 @@ function App() {
     client.on("ban", (channel, username, reason, userstate) => {
       //const channelDetails = _.find(channelsDetails, ['channel', channel.slice(1)]);
       const messages = myStateRef.current.get(channel).filter((message) => message.user ? username === message.user.username : false)
-      let ban = { id: uuid(), status: "ban", username, channel, reason, ts_global: moment().valueOf(), messages, userstate, color: 'red' };
+      let ban = { id: uuid(), status: "ban", username, channel, reason, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages, userstate, color: 'red' };
       console.log("%cban", 'color: red', channel, username, ban);
       setChatBans(channel, ban);
       //setChatThreads([...chatThreads.slice(-199), ban]);
@@ -162,7 +163,7 @@ function App() {
 
     client.on("messagedeleted", (channel, username, deletedMessage, userstate) => {
       let chat = { id: uuid(), status: "message", message: deletedMessage, channel, ts: (userstate["tmi-sent-ts"] ? moment(userstate["tmi-sent-ts"], "x").format('LT') : moment().format('LT')), ts_global: moment().valueOf() };
-      let messageDeleted = { id: uuid(), status: "messagedeleted", username, channel, ts_global: moment().valueOf(), messages: [chat], userstate, color: 'grey' };
+      let messageDeleted = { id: uuid(), status: "messagedeleted", username, channel, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages: [chat], userstate, color: 'grey' };
       console.log("%cmessagedeleted", 'color: orange', channel, username, messageDeleted);
       setChatBans(channel, messageDeleted);
     });
@@ -179,7 +180,7 @@ function App() {
   return (
     <div className="App">
       {connecting ? <p>connecting to chat irc</p> :
-        <div>
+        <>
           {/*{[...chatThreads.keys()].map((channel) => {
             return (
               <div key={channel}>
@@ -191,24 +192,26 @@ function App() {
           <ResponsiveGridLayout
             className="layout"
             cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-            measureBeforeMount={true}
+            measureBeforeMount={false}
+            useCSSTransforms={true}
             layouts={layouts}
-            onLayoutChange={onLayoutChange}
             verticalCompact={true}
             compactType="vertical"
+            onLayoutChange={onLayoutChange}
           >
-            {[...chatThreads.keys()].map((channel) => {
+            {layouts.lg.map((l) => {
+              const channel = l.i;
               const infos = infoStreams.find((infoStream) => "#" + infoStream.user_name.toLowerCase() === channel);
               return (
-                <div data-grid={layout.find((l) => l.channel === channel)} className="channel" key={channel}>
-                  <p className="title">{channel}<span>{infos && infos.type === "live" && "🔴"}</span></p>
+                <div className="channel" key={channel}>
+                  <div className="title" style={[...chatThreads.keys()].find((k) => k === channel) ? { opacity: 1 } : {}}>{channel}<span>{infos && infos.type === "live" && "🔴"}</span></div>
                   <div style={{ maxHeight: 'calc(100% - 21px)', overflow: 'auto' }}>
                     {chatBans.get(channel) && chatBans.get(channel).map(chatBan => {
                       return <div key={chatBan.id}>
-                        <p><span style={{ color: chatBan.color }}>{chatBan.status}</span> : {chatBan.username} {chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</p>
+                        <p><span style={{ color: chatBan.color }}>{chatBan.status}</span> <small>({chatBan.ts})</small> : {chatBan.username} {chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</p>
                         <ul>
                           {chatBan.messages.map((message) =>
-                            <li key={message.id}>({message.ts}) {message.message}</li>
+                            <li key={message.id}><small>({message.ts})</small> {message.message}</li>
                           )}
                         </ul>
                       </div>
@@ -217,7 +220,7 @@ function App() {
                 </div>)
             })}
           </ResponsiveGridLayout>
-        </div>}
+        </>}
     </div>
   );
 }
