@@ -34,3 +34,27 @@ ul {
 .trackY {
   width: 5px;
 }
+
+ul {
+  color: rgb(88, 88, 88);
+}
+/*ul {
+  list-style: none;
+  counter-reset: li
+}
+
+li::before {
+  content: counter(li);
+  color: darkgray;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+  margin-left: -1.5em;
+  margin-right: 0.5em;
+  text-align: right;
+  direction: rtl;
+}
+
+li {
+  counter-increment: li
+}*/

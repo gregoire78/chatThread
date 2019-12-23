@@ -76,6 +76,7 @@ function App() {
   const [infoStreams, setInfoStreams] = useState([]);
   const myStateRef = useRef(chatThreads);
   const chatBansRef = useRef(chatBans);
+  const scrollBarRefs = useRef(new Map());
   const [layouts, setLayouts] = useState(JSON.parse(JSON.stringify(getFromLS("layouts") || { lg: generateLayout() })));
 
   const setChatThreads = (channel, chat) => {
@@ -87,7 +88,7 @@ function App() {
   const setChatBans = (channel, ban) => {
     _setBans(prevState => {
       const y = prevState.get(channel)
-      return chatBansRef.current = new Map(prevState).set(channel, y ? [...y.slice(-99), ban] : [ban]);
+      return chatBansRef.current = new Map(prevState).set(channel, y ? [...y.slice(-199), ban] : [ban]);
     });
   };
 
@@ -123,7 +124,7 @@ function App() {
 
     client.on("roomstate", (channel, state) => {
       setRooms(_.values(_.merge(_.keyBy(rooms, 'room-id'), _.keyBy([state], 'room-id'))))
-      console.log("%croomstate", 'color:green;', channel, state)
+      //console.log("%croomstate", 'color:green;', channel, state)
       setChatThreads(channel, []);
       //show in thread
       /*const channelDetails = _.find(channelsDetails, ['channel', channel.slice(1)]);
@@ -137,36 +138,36 @@ function App() {
       let chat = { id: uuid(), status: "message", message, channel, user, ts: (user["tmi-sent-ts"] ? moment(user["tmi-sent-ts"], "x").format('LT') : moment().format('LT')), ts_global: moment().valueOf() };
       //setChatThreads(prev => [...prev, chat]);
       setChatThreads(channel, chat);
-      //this.chatComponent.current.scrollToBottom();
     });
 
     client.on("timeout", (channel, username, reason, duration, userstate) => {
       //const channelDetails = _.find(channelsDetails, ['channel', channel.slice(1)]);
       const messages = myStateRef.current.get(channel).filter((message) => message.user ? username === message.user.username : false);
       let to = { id: uuid(), status: "timeout", username, channel, reason, duration, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages, userstate, color: 'orange' };
-      console.log("%ctimeout", 'color: orange', channel, username, to);
+      //console.log("%ctimeout", 'color: orange', channel, username, to);
       setChatBans(channel, to);
+      scrollBarRefs.current.get(channel).scrollToBottom();
       //setChatThreads([...chatThreads.slice(-199), to]);
       //this.openNotification(`${channel} TO`, `${username} est reduit au silence pour ${duration}s`, channelDetails.infoChannel.profile_image_url)
-      //this.chatComponent.current.scrollToBottom();
     });
 
     client.on("ban", (channel, username, reason, userstate) => {
       //const channelDetails = _.find(channelsDetails, ['channel', channel.slice(1)]);
       const messages = myStateRef.current.get(channel).filter((message) => message.user ? username === message.user.username : false)
       let ban = { id: uuid(), status: "ban", username, channel, reason, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages, userstate, color: 'red' };
-      console.log("%cban", 'color: red', channel, username, ban);
+      //console.log("%cban", 'color: red', channel, username, ban);
       setChatBans(channel, ban);
       //setChatThreads([...chatThreads.slice(-199), ban]);
       //this.openNotification(`${channel} BANNED`, `${username} est banni`, channelDetails.infoChannel.profile_image_url)
-      //this.chatComponent.current.scrollToBottom();
+      scrollBarRefs.current.get(channel).scrollToBottom();
     });
 
     client.on("messagedeleted", (channel, username, deletedMessage, userstate) => {
       let chat = { id: uuid(), status: "message", message: deletedMessage, channel, ts: (userstate["tmi-sent-ts"] ? moment(userstate["tmi-sent-ts"], "x").format('LT') : moment().format('LT')), ts_global: moment().valueOf() };
-      let messageDeleted = { id: uuid(), status: "messagedeleted", username, channel, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages: [chat], userstate, color: 'grey' };
-      console.log("%cmessagedeleted", 'color: orange', channel, username, messageDeleted);
+      let messageDeleted = { id: uuid(), status: "messagedeleted", username, channel, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages: [chat], userstate, color: 'yellow' };
+      //console.log("%cmessagedeleted", 'color: orange', channel, username, messageDeleted);
       setChatBans(channel, messageDeleted);
+      scrollBarRefs.current.get(channel).scrollToBottom();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -209,6 +210,7 @@ function App() {
                 <div className="channel" key={channel}>
                   <div className="title" style={[...chatThreads.keys()].find((k) => k === channel) ? { opacity: 1 } : {}}>{channel}<span>{infos && infos.type === "live" && "🔴"}</span></div>
                   <Scrollbar
+                    ref={(item) => scrollBarRefs.current.set(channel, item)}
                     trackYProps={{
                       renderer: props => {
                         const { elementRef, ...restProps } = props;
