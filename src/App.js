@@ -5,6 +5,7 @@ import moment from 'moment';
 import 'moment/locale/fr';
 import uuid from 'uuid/v4';
 import axios from 'axios';
+import { Scrollbar } from 'react-scrollbars-custom';
 import { WidthProvider, Responsive } from "react-grid-layout";
 
 import '../node_modules/react-grid-layout/css/styles.css';
@@ -198,6 +199,8 @@ function App() {
             verticalCompact={true}
             compactType="vertical"
             onLayoutChange={onLayoutChange}
+            isDraggable={true}
+            draggableHandle=".title"
           >
             {layouts.lg.map((l) => {
               const channel = l.i;
@@ -205,7 +208,34 @@ function App() {
               return (
                 <div className="channel" key={channel}>
                   <div className="title" style={[...chatThreads.keys()].find((k) => k === channel) ? { opacity: 1 } : {}}>{channel}<span>{infos && infos.type === "live" && "🔴"}</span></div>
-                  <div className="chat">
+                  <Scrollbar
+                    trackYProps={{
+                      renderer: props => {
+                        const { elementRef, ...restProps } = props;
+                        return <span {...restProps} ref={elementRef} style={{ ...restProps.style, width: 5, background: 'none', top: 0, height: '100%', borderRadius: 0 }} />;
+                      }
+                    }}
+                    thumbYProps={{
+                      renderer: props => {
+                        const { elementRef, ...restProps } = props;
+                        return <div {...restProps} ref={elementRef} style={{ ...restProps.style, borderRadius: 0, background: 'lightgrey' }} />;
+                      }
+                    }}
+                    trackXProps={{
+                      renderer: props => {
+                        const { elementRef, ...restProps } = props;
+                        return <span {...restProps} ref={elementRef} style={{ ...restProps.style, height: 5, background: 'none', left: 0, width: '100%', borderRadius: 0 }} />;
+                      }
+                    }}
+                    thumbXProps={{
+                      renderer: props => {
+                        const { elementRef, ...restProps } = props;
+                        return <div {...restProps} ref={elementRef} style={{ ...restProps.style, borderRadius: 0, background: 'lightgrey' }} />;
+                      }
+                    }}
+                    className="chat"
+                    style={{ height: 'calc(100% - 21px)' }}
+                  >
                     {chatBans.get(channel) && chatBans.get(channel).map(chatBan => {
                       return <div key={chatBan.id}>
                         <p><span style={{ color: chatBan.color }}>{chatBan.status}</span> <small>({chatBan.ts})</small> : {chatBan.username} {chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</p>
@@ -216,7 +246,7 @@ function App() {
                         </ul>
                       </div>
                     })}
-                  </div>
+                  </Scrollbar>
                 </div>)
             })}
           </ResponsiveGridLayout>

@@ -22,13 +22,15 @@ ul {
   height: 21px;
   overflow: hidden;
   opacity: .3;
-}
-
-.chat {
-  height: calc(100% - 21px);
-  overflow: auto;
+  cursor: pointer;
+  background-color: lightgray;
+  user-select: none;
 }
 
 .react-grid-item.react-grid-placeholder {
   background-color: wheat;
+}
+
+.trackY {
+  width: 5px;
 }
