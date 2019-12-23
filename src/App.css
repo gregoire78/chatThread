@@ -24,6 +24,11 @@ ul {
   opacity: .3;
 }
 
+.chat {
+  height: calc(100% - 21px);
+  overflow: auto;
+}
+
 .react-grid-item.react-grid-placeholder {
   background-color: wheat;
 }

@@ -205,7 +205,7 @@ function App() {
               return (
                 <div className="channel" key={channel}>
                   <div className="title" style={[...chatThreads.keys()].find((k) => k === channel) ? { opacity: 1 } : {}}>{channel}<span>{infos && infos.type === "live" && "🔴"}</span></div>
-                  <div style={{ maxHeight: 'calc(100% - 21px)', overflow: 'auto' }}>
+                  <div className="chat">
                     {chatBans.get(channel) && chatBans.get(channel).map(chatBan => {
                       return <div key={chatBan.id}>
                         <p><span style={{ color: chatBan.color }}>{chatBan.status}</span> <small>({chatBan.ts})</small> : {chatBan.username} {chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</p>
