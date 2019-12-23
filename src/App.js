@@ -164,7 +164,7 @@ function App() {
 
     client.on("messagedeleted", (channel, username, deletedMessage, userstate) => {
       let chat = { id: uuid(), status: "message", message: deletedMessage, channel, ts: (userstate["tmi-sent-ts"] ? moment(userstate["tmi-sent-ts"], "x").format('LT') : moment().format('LT')), ts_global: moment().valueOf() };
-      let messageDeleted = { id: uuid(), status: "messagedeleted", username, channel, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages: [chat], userstate, color: 'yellow' };
+      let messageDeleted = { id: uuid(), status: "messagedeleted", username, channel, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages: [chat], userstate, color: 'blue' };
       //console.log("%cmessagedeleted", 'color: orange', channel, username, messageDeleted);
       setChatBans(channel, messageDeleted);
       scrollBarRefs.current.get(channel).scrollToBottom();
