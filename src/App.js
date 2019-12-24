@@ -8,6 +8,8 @@ import axios from 'axios';
 import { Scrollbar } from 'react-scrollbars-custom';
 import { WidthProvider, Responsive } from "react-grid-layout";
 
+import Popup from './Popup';
+
 import '../node_modules/react-grid-layout/css/styles.css';
 import '../node_modules/react-resizable/css/styles.css';
 import './App.css';
@@ -71,6 +73,7 @@ function App() {
   }
 
   const [connecting, setConnecting] = useState(true);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [rooms, setRooms] = useState([]);
   const [chatThreads, _setChatThreads] = useState(new Map());
   const [chatBans, _setBans] = useState(new Map());
@@ -83,7 +86,7 @@ function App() {
   const setChatThreads = (channel, chat) => {
     _setChatThreads(prevState => {
       const y = prevState.get(channel)
-      return myStateRef.current = new Map(prevState).set(channel, y ? [...y, chat] : [chat]);
+      return myStateRef.current = new Map(prevState).set(channel, y ? [...y.slice(-2999), chat] : [chat]);
     });
   };
   const setChatBans = (channel, ban) => {
@@ -133,11 +136,9 @@ function App() {
       setRooms(_.values(_.merge(_.keyBy(rooms, 'room-id'), _.keyBy([state], 'room-id'))))
       //console.log("%croomstate", 'color:green;', channel, state)
       setChatThreads(channel, []);
-      //show in thread
       /*const channelDetails = _.find(channelsDetails, ['channel', channel.slice(1)]);
       let roomstate = { status: "roomstate", channel: channelDetails, state, ts_global: moment().valueOf() };
       setChatThreads([...chatThreads.slice(-199), roomstate])*/
-      //this.chatComponent.current.scrollToBottom();
     });
 
     client.on("chat", async (channel, user, message, self) => {
@@ -182,6 +183,11 @@ function App() {
     <div className="App">
       {connecting ? <p>connecting to chat irc</p> :
         <>
+          {isPopupOpen && (
+            <Popup closePopup={() => { }}>
+              <p>test</p>
+            </Popup>
+          )}
           {/*{[...chatThreads.keys()].map((channel) => {
             return (
               <div key={channel}>
