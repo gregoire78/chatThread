@@ -22,7 +22,7 @@ ul {
   height: 21px;
   overflow: hidden;
   opacity: .3;
-  cursor: pointer;
+  cursor: grab;
   background-color: lightgray;
   user-select: none;
 }
@@ -36,8 +36,20 @@ ul {
 }
 
 ul {
+  list-style: none;
   color: rgb(88, 88, 88);
+  padding-left: 20px;
 }
+
+li::before {
+  content: "\25E6";
+  display: inline-block;
+  width: 20px;
+  margin-left: -20px;
+  margin-right: 0;
+  text-align: center;
+}
+
 /*ul {
   list-style: none;
   counter-reset: li

@@ -52,7 +52,8 @@ function App() {
     'domingo',
     'squeezielive',
     'fantabobshow',
-    'zerator'
+    'zerator',
+    'grabyourpopcorn'
   ];
 
   const generateLayout = () => {
@@ -82,14 +83,20 @@ function App() {
   const setChatThreads = (channel, chat) => {
     _setChatThreads(prevState => {
       const y = prevState.get(channel)
-      return myStateRef.current = new Map(prevState).set(channel, y ? [...y.slice(-199), chat] : [chat]);
+      return myStateRef.current = new Map(prevState).set(channel, y ? [...y, chat] : [chat]);
     });
   };
   const setChatBans = (channel, ban) => {
+    const scrollBar = scrollBarRefs.current.get(channel);
+    const isBottom = scrollBar.scrollHeight - scrollBar.scrollTop === scrollBar.clientHeight
+
     _setBans(prevState => {
       const y = prevState.get(channel)
-      return chatBansRef.current = new Map(prevState).set(channel, y ? [...y.slice(-199), ban] : [ban]);
+      return chatBansRef.current = new Map(prevState).set(channel, y ? [...y, ban] : [ban]);
     });
+    if (isBottom) {
+      scrollBar.scrollToBottom();
+    }
   };
 
   const getInfoStreams = async () => {
@@ -143,23 +150,16 @@ function App() {
     client.on("timeout", (channel, username, reason, duration, userstate) => {
       //const channelDetails = _.find(channelsDetails, ['channel', channel.slice(1)]);
       const messages = myStateRef.current.get(channel).filter((message) => message.user ? username === message.user.username : false);
-      let to = { id: uuid(), status: "timeout", username, channel, reason, duration, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages, userstate, color: 'orange' };
+      let to = { id: uuid(), status: "timeout", username, channel, reason, duration, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages, userstate, color: 'darkorange' };
       //console.log("%ctimeout", 'color: orange', channel, username, to);
       setChatBans(channel, to);
-      scrollBarRefs.current.get(channel).scrollToBottom();
-      //setChatThreads([...chatThreads.slice(-199), to]);
-      //this.openNotification(`${channel} TO`, `${username} est reduit au silence pour ${duration}s`, channelDetails.infoChannel.profile_image_url)
     });
 
     client.on("ban", (channel, username, reason, userstate) => {
-      //const channelDetails = _.find(channelsDetails, ['channel', channel.slice(1)]);
       const messages = myStateRef.current.get(channel).filter((message) => message.user ? username === message.user.username : false)
       let ban = { id: uuid(), status: "ban", username, channel, reason, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages, userstate, color: 'red' };
       //console.log("%cban", 'color: red', channel, username, ban);
       setChatBans(channel, ban);
-      //setChatThreads([...chatThreads.slice(-199), ban]);
-      //this.openNotification(`${channel} BANNED`, `${username} est banni`, channelDetails.infoChannel.profile_image_url)
-      scrollBarRefs.current.get(channel).scrollToBottom();
     });
 
     client.on("messagedeleted", (channel, username, deletedMessage, userstate) => {
@@ -167,7 +167,6 @@ function App() {
       let messageDeleted = { id: uuid(), status: "messagedeleted", username, channel, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages: [chat], userstate, color: 'blue' };
       //console.log("%cmessagedeleted", 'color: orange', channel, username, messageDeleted);
       setChatBans(channel, messageDeleted);
-      scrollBarRefs.current.get(channel).scrollToBottom();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -202,13 +201,16 @@ function App() {
             onLayoutChange={onLayoutChange}
             isDraggable={true}
             draggableHandle=".title"
+            //onDragStart={(layout, oldItem, newItem, placeholder, e, element) => { e.target.style.cursor = "grabbing"; }}
+            onDrag={(layout, oldItem, newItem, placeholder, e, element) => { element.getElementsByClassName('title')[0].style.cursor = "grabbing" }}
+            onDragStop={(layout, oldItem, newItem, placeholder, e, element) => { e.target.style.cursor = "grab"; }}
           >
             {layouts.lg.map((l) => {
               const channel = l.i;
               const infos = infoStreams.find((infoStream) => "#" + infoStream.user_name.toLowerCase() === channel);
               return (
                 <div className="channel" key={channel}>
-                  <div className="title" style={[...chatThreads.keys()].find((k) => k === channel) ? { opacity: 1 } : {}}>{channel}<span>{infos && infos.type === "live" && "🔴"}</span></div>
+                  <div className="title" style={[...chatThreads.keys()].find((k) => k === channel) ? { opacity: 1 } : {}} title={infos && `${moment.utc(moment() - moment(infos.started_at)).format("HH[h]mm")} - ${infos.viewer_count.toLocaleString('en-US', { minimumFractionDigits: 0 })}`}>{channel}<span>{infos && infos.type === "live" && "🔴"}</span></div>
                   <Scrollbar
                     ref={(item) => scrollBarRefs.current.set(channel, item)}
                     trackYProps={{
@@ -238,9 +240,10 @@ function App() {
                     className="chat"
                     style={{ height: 'calc(100% - 21px)' }}
                   >
-                    {chatBans.get(channel) && chatBans.get(channel).map(chatBan => {
+                    {/*new Array(1000).fill(0).map(() => <p>test</p>)*/}
+                    {chatBans.get(channel) && chatBans.get(channel).slice(-99).map(chatBan => {
                       return <div key={chatBan.id}>
-                        <p><span style={{ color: chatBan.color }}>{chatBan.status}</span> <small>({chatBan.ts})</small> : {chatBan.username} {chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</p>
+                        <p><small>({chatBan.ts})</small> <span style={{ color: chatBan.color }}>{chatBan.status}</span> <small>{chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</small> : {chatBan.username}</p>
                         <ul>
                           {chatBan.messages.map((message) =>
                             <li key={message.id}><small>({message.ts})</small> {message.message}</li>
