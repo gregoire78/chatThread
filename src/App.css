@@ -50,6 +50,14 @@ li::before {
   text-align: center;
 }
 
+button {
+  background: none;
+  border: none;
+  position: absolute;
+  right: 0;
+  height: 21px;
+}
+
 /*ul {
   list-style: none;
   counter-reset: li

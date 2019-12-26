@@ -5,10 +5,9 @@ import moment from 'moment';
 import 'moment/locale/fr';
 import uuid from 'uuid/v4';
 import axios from 'axios';
-import { Scrollbar } from 'react-scrollbars-custom';
 import { WidthProvider, Responsive } from "react-grid-layout";
 
-import Popup from './Popup';
+import Panel from './Panel';
 
 import '../node_modules/react-grid-layout/css/styles.css';
 import '../node_modules/react-resizable/css/styles.css';
@@ -41,7 +40,12 @@ function useInterval(callback, delay) {
 function App() {
   const channels = [
     'mathox',
+    'moman',
+    'xari',
     'aypierre',
+    'aureliensama',
+    'nems',
+    'libe',
     'wingobear',
     'kennystream',
     'sardoche',
@@ -64,7 +68,7 @@ function App() {
       const h = 1;
       return {
         x: Math.floor((i * 12 / 4) % 12),
-        y: 0,
+        y: Infinity,
         w: w,
         h: h,
         i: "#" + item,
@@ -73,7 +77,6 @@ function App() {
   }
 
   const [connecting, setConnecting] = useState(true);
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [rooms, setRooms] = useState([]);
   const [chatThreads, _setChatThreads] = useState(new Map());
   const [chatBans, _setBans] = useState(new Map());
@@ -81,7 +84,7 @@ function App() {
   const myStateRef = useRef(chatThreads);
   const chatBansRef = useRef(chatBans);
   const scrollBarRefs = useRef(new Map());
-  const [layouts, setLayouts] = useState(JSON.parse(JSON.stringify(getFromLS("layouts") || { lg: generateLayout() })));
+  const [layouts, setLayouts] = useState({ ...getFromLS("layouts"), ...{ lg: _.uniqBy([...getFromLS("layouts") ? getFromLS("layouts").lg.filter((i) => channels.includes(i.i.replace("#", ""))) : [], ...generateLayout()], 'i') } });
 
   const setChatThreads = (channel, chat) => {
     _setChatThreads(prevState => {
@@ -183,11 +186,6 @@ function App() {
     <div className="App">
       {connecting ? <p>connecting to chat irc</p> :
         <>
-          {isPopupOpen && (
-            <Popup closePopup={() => { }}>
-              <p>test</p>
-            </Popup>
-          )}
           {/*{[...chatThreads.keys()].map((channel) => {
             return (
               <div key={channel}>
@@ -209,56 +207,16 @@ function App() {
             draggableHandle=".title"
             //onDragStart={(layout, oldItem, newItem, placeholder, e, element) => { e.target.style.cursor = "grabbing"; }}
             onDrag={(layout, oldItem, newItem, placeholder, e, element) => { element.getElementsByClassName('title')[0].style.cursor = "grabbing" }}
-            onDragStop={(layout, oldItem, newItem, placeholder, e, element) => { e.target.style.cursor = "grab"; }}
+            onDragStop={(layout, oldItem, newItem, placeholder, e, element) => { element.getElementsByClassName('title')[0].style.cursor = "grab"; }}
           >
             {layouts.lg.map((l) => {
               const channel = l.i;
               const infos = infoStreams.find((infoStream) => "#" + infoStream.user_name.toLowerCase() === channel);
               return (
-                <div className="channel" key={channel}>
-                  <div className="title" style={[...chatThreads.keys()].find((k) => k === channel) ? { opacity: 1 } : {}} title={infos && `${moment.utc(moment() - moment(infos.started_at)).format("HH[h]mm")} - ${infos.viewer_count.toLocaleString('en-US', { minimumFractionDigits: 0 })}`}>{channel}<span>{infos && infos.type === "live" && "🔴"}</span></div>
-                  <Scrollbar
-                    ref={(item) => scrollBarRefs.current.set(channel, item)}
-                    trackYProps={{
-                      renderer: props => {
-                        const { elementRef, ...restProps } = props;
-                        return <span {...restProps} ref={elementRef} style={{ ...restProps.style, width: 5, background: 'none', top: 0, height: '100%', borderRadius: 0 }} />;
-                      }
-                    }}
-                    thumbYProps={{
-                      renderer: props => {
-                        const { elementRef, ...restProps } = props;
-                        return <div {...restProps} ref={elementRef} style={{ ...restProps.style, borderRadius: 0, background: 'lightgrey' }} />;
-                      }
-                    }}
-                    trackXProps={{
-                      renderer: props => {
-                        const { elementRef, ...restProps } = props;
-                        return <span {...restProps} ref={elementRef} style={{ ...restProps.style, height: 5, background: 'none', left: 0, width: '100%', borderRadius: 0 }} />;
-                      }
-                    }}
-                    thumbXProps={{
-                      renderer: props => {
-                        const { elementRef, ...restProps } = props;
-                        return <div {...restProps} ref={elementRef} style={{ ...restProps.style, borderRadius: 0, background: 'lightgrey' }} />;
-                      }
-                    }}
-                    className="chat"
-                    style={{ height: 'calc(100% - 21px)' }}
-                  >
-                    {/*new Array(1000).fill(0).map(() => <p>test</p>)*/}
-                    {chatBans.get(channel) && chatBans.get(channel).slice(-99).map(chatBan => {
-                      return <div key={chatBan.id}>
-                        <p><small>({chatBan.ts})</small> <span style={{ color: chatBan.color }}>{chatBan.status}</span> <small>{chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</small> : {chatBan.username}</p>
-                        <ul>
-                          {chatBan.messages.map((message) =>
-                            <li key={message.id}><small>({message.ts})</small> {message.message}</li>
-                          )}
-                        </ul>
-                      </div>
-                    })}
-                  </Scrollbar>
-                </div>)
+                <div key={channel} className="channel">
+                  <Panel channel={channel} chatThreads={chatThreads} scrollBarRefs={scrollBarRefs} chatBans={chatBans} infos={infos} />
+                </div>
+              )
             })}
           </ResponsiveGridLayout>
         </>}
