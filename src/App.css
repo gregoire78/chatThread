@@ -39,6 +39,7 @@ ul {
   list-style: none;
   color: rgb(88, 88, 88);
   padding-left: 20px;
+  overflow-wrap: break-word;
 }
 
 li::before {
@@ -51,11 +52,17 @@ li::before {
 }
 
 button {
-  background: none;
+  background: lightgrey;
   border: none;
   position: absolute;
   right: 0;
   height: 21px;
+  top: 0;
+}
+
+button.open {
+  background-color: grey;
+  color: white;
 }
 
 /*ul {

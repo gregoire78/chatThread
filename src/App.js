@@ -59,7 +59,8 @@ function App() {
     'squeezielive',
     'fantabobshow',
     'zerator',
-    'grabyourpopcorn'
+    'grabyourpopcorn',
+    'skyyart'
   ];
 
   const generateLayout = () => {
@@ -77,12 +78,13 @@ function App() {
   }
 
   const [connecting, setConnecting] = useState(true);
-  const [rooms, setRooms] = useState([]);
+  const [rooms, _setRooms] = useState([]);
   const [chatThreads, _setChatThreads] = useState(new Map());
   const [chatBans, _setBans] = useState(new Map());
   const [infoStreams, setInfoStreams] = useState([]);
   const myStateRef = useRef(chatThreads);
   const chatBansRef = useRef(chatBans);
+  const roomsRef = useRef(rooms);
   const scrollBarRefs = useRef(new Map());
   const [layouts, setLayouts] = useState({ ...getFromLS("layouts"), ...{ lg: _.uniqBy([...getFromLS("layouts") ? getFromLS("layouts").lg.filter((i) => channels.includes(i.i.replace("#", ""))) : [], ...generateLayout()], 'i') } });
 
@@ -90,6 +92,11 @@ function App() {
     _setChatThreads(prevState => {
       const y = prevState.get(channel)
       return myStateRef.current = new Map(prevState).set(channel, y ? [...y.slice(-2999), chat] : [chat]);
+    });
+  };
+  const setRooms = (room) => {
+    _setRooms(prevState => {
+      return roomsRef.current = [...prevState, room];
     });
   };
   const setChatBans = (channel, ban) => {
@@ -136,12 +143,8 @@ function App() {
     });
 
     client.on("roomstate", (channel, state) => {
-      setRooms(_.values(_.merge(_.keyBy(rooms, 'room-id'), _.keyBy([state], 'room-id'))))
+      setRooms(state);
       //console.log("%croomstate", 'color:green;', channel, state)
-      setChatThreads(channel, []);
-      /*const channelDetails = _.find(channelsDetails, ['channel', channel.slice(1)]);
-      let roomstate = { status: "roomstate", channel: channelDetails, state, ts_global: moment().valueOf() };
-      setChatThreads([...chatThreads.slice(-199), roomstate])*/
     });
 
     client.on("chat", async (channel, user, message, self) => {
@@ -214,7 +217,7 @@ function App() {
               const infos = infoStreams.find((infoStream) => "#" + infoStream.user_name.toLowerCase() === channel);
               return (
                 <div key={channel} className="channel">
-                  <Panel channel={channel} chatThreads={chatThreads} scrollBarRefs={scrollBarRefs} chatBans={chatBans} infos={infos} />
+                  <Panel channel={channel} chatThreads={chatThreads} scrollBarRefs={scrollBarRefs} chatBans={chatBans} infos={infos} rooms={rooms} />
                 </div>
               )
             })}
