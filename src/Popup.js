@@ -38,16 +38,25 @@ const Popup = props => {
         /*externalWindow.current.addEventListener("beforeunload", () => {
             props.closePopup();
         });*/
-        externalWindow.current.addEventListener('scroll', (e) => {
+        externalWindow.current.addEventListener('wheel', (e) => {
             if (externalWindow.current) {
                 const el = externalWindow.current.document.body;
-                if (el.scrollHeight - el.scrollTop === el.clientHeight) {
+                console.log(el.scrollTop, el.scrollHeight - el.clientHeight)
+                if (el.scrollTop === el.scrollHeight - el.clientHeight) {
                     setAutoScroll(true);
                 } else {
                     setAutoScroll(false);
                 }
             }
         }, true);
+        /*externalWindow.current.addEventListener('scroll', (e) => {
+            if (externalWindow.current) {
+                const el = externalWindow.current.document.body;
+                if (el.scrollHeight - el.scrollTop === el.clientHeight && !autoScroll) {
+                    setAutoScroll(true);
+                }
+            }
+        }, true);*/
         externalWindow.current.addEventListener("resize", () => {
             externalWindow.current.document.body.scrollTop = containerEl.scrollHeight;
         });
