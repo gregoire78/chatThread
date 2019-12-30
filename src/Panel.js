@@ -84,9 +84,9 @@ export default function Panel({ channel, chatThreads, scrollBarRefs, chatBans, i
             <div key={chatBan.id}>
               <p><small>({chatBan.ts})</small> <span style={{ color: chatBan.color }}>{chatBan.status}</span> <small>{chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</small> : {chatBan.username}</p>
               <ul>
-                {chatBan.userstate['ban-duration'] && parseInt(chatBan.userstate['ban-duration']) > 600 ? chatBan.messages.map((message) =>
+                {chatBan.userstate['ban-duration'] && parseInt(chatBan.userstate['ban-duration']) <= 600 ? chatBan.messages.slice(-1).map((message) =>
                   <li key={message.id}><small>({message.ts})</small> {message.message}</li>
-                ) : chatBan.messages.slice(-1).map((message) =>
+                ) : chatBan.messages.map((message) =>
                   <li key={message.id}><small>({message.ts})</small> {message.message}</li>
                 )}
               </ul>
