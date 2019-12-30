@@ -25,13 +25,13 @@ function formatEmotes(text, emotes) {
   return splitText.join('').replace(/(<img\s[^>]*>)(?: )(?=<)/igm, "$1").replace(/(?:^|\s)((?:http|https|ftp|ftps):\/\/[a-zA-Z0-9\-.]+\.[a-zA-Z]{2,}(\/\S*)?)/g, " <a href=$1 target='_blank' style='color: black;vertical-align: middle;'>$1</a>");
 }
 
-export default function Panel({ channel, chatThreads, scrollBarRefs, chatBans, infos, rooms }) {
+export default function Panel({ channel, chatThreads, scrollBarRefs, chatBans, infosStream, infosChannel, rooms }) {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const isLoad = [...chatThreads.keys()].find((k) => k === channel);
   const isLoadRoom = rooms.find((room) => room.channel === channel);
   return (
     <>
-      {isPopupOpen && <Popup closePopup={() => setIsPopupOpen(false)} title={channel}>
+      {isPopupOpen && <Popup closePopup={() => setIsPopupOpen(false)} title={infosChannel['display_name']}>
         <div style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif" }}>
           {chatThreads.get(channel).slice(-200).map((chatThread) =>
             <p key={chatThread.id} style={{ minHeight: "28px", overflowWrap: "break-word", margin: 0 }}>
@@ -44,9 +44,9 @@ export default function Panel({ channel, chatThreads, scrollBarRefs, chatBans, i
           )}
         </div>
       </Popup>}
-      <div className="title" style={isLoadRoom ? { opacity: 1 } : {}} title={infos && `${moment.utc(moment() - moment(infos.started_at)).format("HH[h]mm")} - ${infos.viewer_count.toLocaleString('fr-FR', { minimumFractionDigits: 0 })}`}>
-        <span>{infos && infos.type === "live" && "🔴"}</span>{channel}
-        <button className={isPopupOpen ? "open" : ""} disabled={!isLoad} onClick={() => setIsPopupOpen(true)}>chat</button>
+      <div className={"title" + (infosStream && infosStream.type === "live" ? " live" : "")} style={isLoadRoom ? { opacity: 1 } : {}} title={infosStream && `${moment.utc(moment() - moment(infosStream.started_at)).format("HH[h]mm")} - ${infosStream.viewer_count.toLocaleString('fr-FR', { minimumFractionDigits: 0 })}`}>
+        <img draggable={false} style={{ height: 21, userSelect: "none", marginRight: 5 }} src={infosChannel.profile_image_url} alt="" /><span style={infosStream && infosStream.type === "live" && { color: "white", fontWeight: "bold" }}>{infosChannel['display_name']}</span>
+        <button className={isPopupOpen ? "open" : ""} disabled={!isLoad} onClick={() => setIsPopupOpen(!isPopupOpen)}>chat</button>
       </div>
 
       <Scrollbar
@@ -84,7 +84,9 @@ export default function Panel({ channel, chatThreads, scrollBarRefs, chatBans, i
             <div key={chatBan.id}>
               <p><small>({chatBan.ts})</small> <span style={{ color: chatBan.color }}>{chatBan.status}</span> <small>{chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</small> : {chatBan.username}</p>
               <ul>
-                {chatBan.messages.map((message) =>
+                {chatBan.userstate['ban-duration'] && parseInt(chatBan.userstate['ban-duration']) > 600 ? chatBan.messages.map((message) =>
+                  <li key={message.id}><small>({message.ts})</small> {message.message}</li>
+                ) : chatBan.messages.slice(-1).map((message) =>
                   <li key={message.id}><small>({message.ts})</small> {message.message}</li>
                 )}
               </ul>

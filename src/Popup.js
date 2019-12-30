@@ -5,24 +5,47 @@ import {
 } from "react";
 import ReactDOM from "react-dom";
 
+function PopupCenter(url, title, w, h) {
+    const dualScreenLeft = window.screenLeft !== undefined ? window.screenLeft : window.screenX;
+    const dualScreenTop = window.screenTop !== undefined ? window.screenTop : window.screenY;
+
+    const width = window.innerWidth ? window.innerWidth : document.documentElement.clientWidth ? document.documentElement.clientWidth : window.screen.width;
+    const height = window.innerHeight ? window.innerHeight : document.documentElement.clientHeight ? document.documentElement.clientHeight : window.screen.height;
+
+    const systemZoom = width / window.screen.availWidth;
+    const left = (width - w) / 2 / systemZoom + dualScreenLeft
+    const top = (height - h) / 2 / systemZoom + dualScreenTop
+    const newWindow = window.open(url, title, 'scrollbars=yes, width=' + w / systemZoom + ', height=' + h / systemZoom + ', top=' + top + ', left=' + left);
+
+    // Puts focus on the newWindow
+    if (window.focus) newWindow.focus();
+    return newWindow;
+}
+
 const Popup = props => {
     const [containerEl] = useState(document.createElement("div"));
     const [autoScroll, setAutoScroll] = useState(true);
     const externalWindow = useRef();
 
     useEffect(() => {
-        externalWindow.current = window.open("", "", `width=600,height=400,left=600,top=200`);
+        //externalWindow.current = window.open("", props.title, `width=600,height=400,left=600,top=200`);
+        externalWindow.current = PopupCenter("", props.title, 600, 600);
         externalWindow.current.document.title = props.title;
         externalWindow.current.document.body.appendChild(containerEl);
-        externalWindow.current.addEventListener("beforeunload", () => {
+        externalWindow.current.onunload = externalWindow.current.onbeforeunload = () => {
             props.closePopup();
-        });
+        }
+        /*externalWindow.current.addEventListener("beforeunload", () => {
+            props.closePopup();
+        });*/
         externalWindow.current.addEventListener('scroll', (e) => {
-            const el = externalWindow.current.document.body;
-            if (el.scrollHeight - el.scrollTop === el.clientHeight) {
-                setAutoScroll(true);
-            } else {
-                setAutoScroll(false);
+            if (externalWindow.current) {
+                const el = externalWindow.current.document.body;
+                if (el.scrollHeight - el.scrollTop === el.clientHeight) {
+                    setAutoScroll(true);
+                } else {
+                    setAutoScroll(false);
+                }
             }
         }, true);
         externalWindow.current.addEventListener("resize", () => {
@@ -31,7 +54,7 @@ const Popup = props => {
         externalWindow.current.document.body.scrollTop = containerEl.scrollHeight;
         return function cleanup() {
             externalWindow.current.close();
-            //externalWindow.current = null;
+            externalWindow.current = null;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

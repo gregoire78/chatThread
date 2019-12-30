@@ -25,6 +25,11 @@ ul {
   cursor: grab;
   background-color: lightgray;
   user-select: none;
+  display: flex;
+}
+
+.title.live {
+  background-color: #b76363;
 }
 
 .react-grid-item.react-grid-placeholder {
@@ -40,6 +45,7 @@ ul {
   color: rgb(88, 88, 88);
   padding-left: 20px;
   overflow-wrap: break-word;
+  font-size: small;
 }
 
 li::before {
@@ -58,6 +64,11 @@ button {
   right: 0;
   height: 21px;
   top: 0;
+  outline: none;
+}
+
+button:enabled:hover {
+  cursor: pointer;
 }
 
 button.open {

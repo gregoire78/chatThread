@@ -82,6 +82,7 @@ function App() {
   const [chatThreads, _setChatThreads] = useState(new Map());
   const [chatBans, _setBans] = useState(new Map());
   const [infoStreams, setInfoStreams] = useState([]);
+  const [infoChannels, setInfoChannels] = useState([]);
   const myStateRef = useRef(chatThreads);
   const chatBansRef = useRef(chatBans);
   const roomsRef = useRef(rooms);
@@ -121,12 +122,22 @@ function App() {
     setInfoStreams(infos);
   }
 
+  const getInfoChannels = async () => {
+    const infos = (await axios.get(`https://api.twitch.tv/helix/users?login=${channels.join('&login=')}`, {
+      headers: {
+        'Client-ID': process.env.REACT_APP_TWITCH_CLIENTID
+      }
+    })).data.data;
+    setInfoChannels(infos);
+  }
+
   useInterval(() => {
     getInfoStreams();
   }, 20000)
 
   useEffect(() => {
     getInfoStreams();
+    getInfoChannels();
     const client = new tmi.client({
       connection: {
         secure: true,
@@ -208,16 +219,18 @@ function App() {
             onLayoutChange={onLayoutChange}
             isDraggable={true}
             draggableHandle=".title"
+            onResize={(layout, oldItem, newItem, placeholder, e, element) => scrollBarRefs.current.get(element.parentElement.getAttribute('data-channel')).scrollToBottom()}
             //onDragStart={(layout, oldItem, newItem, placeholder, e, element) => { e.target.style.cursor = "grabbing"; }}
             onDrag={(layout, oldItem, newItem, placeholder, e, element) => { element.getElementsByClassName('title')[0].style.cursor = "grabbing" }}
             onDragStop={(layout, oldItem, newItem, placeholder, e, element) => { element.getElementsByClassName('title')[0].style.cursor = "grab"; }}
           >
             {layouts.lg.map((l) => {
               const channel = l.i;
-              const infos = infoStreams.find((infoStream) => "#" + infoStream.user_name.toLowerCase() === channel);
+              const infosStream = infoStreams.find((infosStream) => "#" + infosStream.user_name.toLowerCase() === channel);
+              const infosChannel = infoChannels.find((infosChannel) => "#" + infosChannel.login === channel);
               return (
-                <div key={channel} className="channel">
-                  <Panel channel={channel} chatThreads={chatThreads} scrollBarRefs={scrollBarRefs} chatBans={chatBans} infos={infos} rooms={rooms} />
+                <div key={channel} className="channel" data-channel={channel}>
+                  <Panel channel={channel} chatThreads={chatThreads} scrollBarRefs={scrollBarRefs} chatBans={chatBans} infosStream={infosStream} infosChannel={infosChannel} rooms={rooms} />
                 </div>
               )
             })}
