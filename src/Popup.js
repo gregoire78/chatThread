@@ -38,17 +38,20 @@ const Popup = props => {
         /*externalWindow.current.addEventListener("beforeunload", () => {
             props.closePopup();
         });*/
-        externalWindow.current.addEventListener('wheel', (e) => {
+        const scroll = (e) => {
             if (externalWindow.current) {
                 const el = externalWindow.current.document.body;
-                console.log(el.scrollTop, el.scrollHeight - el.clientHeight)
+                //console.log(el.scrollTop, el.scrollHeight - el.clientHeight)
                 if (el.scrollTop === el.scrollHeight - el.clientHeight) {
                     setAutoScroll(true);
                 } else {
                     setAutoScroll(false);
                 }
             }
-        }, true);
+        }
+        externalWindow.current.addEventListener('wheel', scroll, true);
+        externalWindow.current.addEventListener('touchmove', scroll, true);
+        externalWindow.current.addEventListener('touchend', scroll, true);
         /*externalWindow.current.addEventListener('scroll', (e) => {
             if (externalWindow.current) {
                 const el = externalWindow.current.document.body;

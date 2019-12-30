@@ -26,6 +26,7 @@ ul {
   background-color: lightgray;
   user-select: none;
   display: flex;
+  line-height: 21px;
 }
 
 .title.live {

@@ -39,6 +39,8 @@ function useInterval(callback, delay) {
 
 function App() {
   const channels = [
+    'peteur_pan',
+    'solary',
     'mathox',
     'moman',
     'xari',
@@ -54,7 +56,6 @@ function App() {
     'mistermv',
     'ponce',
     'shaunz',
-    'peteur_pan',
     'domingo',
     'squeezielive',
     'fantabobshow',
@@ -95,11 +96,13 @@ function App() {
       return myStateRef.current = new Map(prevState).set(channel, y ? [...y.slice(-2999), chat] : [chat]);
     });
   };
+
   const setRooms = (room) => {
     _setRooms(prevState => {
       return roomsRef.current = [...prevState, room];
     });
   };
+
   const setChatBans = (channel, ban) => {
     const scrollBar = scrollBarRefs.current.get(channel);
     const isBottom = scrollBar.scrollHeight - scrollBar.scrollTop === scrollBar.clientHeight
