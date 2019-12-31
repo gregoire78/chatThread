@@ -84,8 +84,10 @@ function App() {
   const [chatBans, _setBans] = useState(new Map());
   const [infoStreams, setInfoStreams] = useState([]);
   const [infoChannels, setInfoChannels] = useState([]);
+  const [badgesChannels, setBadgesChannels] = useState(new Map());
   const myStateRef = useRef(chatThreads);
   const chatBansRef = useRef(chatBans);
+  const badgesChannelsRef = useRef(badgesChannels);
   const roomsRef = useRef(rooms);
   const scrollBarRefs = useRef(new Map());
   const [layouts, setLayouts] = useState({ ...getFromLS("layouts"), ...{ lg: _.uniqBy([...getFromLS("layouts") ? getFromLS("layouts").lg.filter((i) => channels.includes(i.i.replace("#", ""))) : [], ...generateLayout()], 'i') } });
@@ -132,6 +134,20 @@ function App() {
       }
     })).data.data;
     setInfoChannels(infos);
+    const badgesGlobal = (await axios.get(`https://badges.twitch.tv/v1/badges/global/display?language=fr`)).data;
+    await Promise.all(channels.map(async (channel) => {
+      const f = infos.find((info) => "#" + info.login === channel);
+      const badges = await getBadgeLink(f, badgesGlobal);
+      setBadgesChannels((p) => {
+        return badgesChannelsRef.current = new Map(p).set(channel, badges)
+      });
+      return badges;
+    }));
+  }
+
+  const getBadgeLink = async (infoChannel, badgesGlobal) => {
+    const badgesChannel = (await axios.get(`https://badges.twitch.tv/v1/badges/channels/${infoChannel.id}/display?language=fr`)).data;
+    return { ...badgesGlobal.badge_sets, ...badgesChannel.badge_sets }
   }
 
   useInterval(() => {
@@ -164,6 +180,9 @@ function App() {
     client.on("chat", async (channel, user, message, self) => {
       //const channelDetails = _.find(channelsDetails, ['channel', channel.slice(1)]);
       let chat = { id: uuid(), status: "message", message, channel, user, ts: (user["tmi-sent-ts"] ? moment(user["tmi-sent-ts"], "x").format('LT') : moment().format('LT')), ts_global: moment().valueOf() };
+      if (user.badges) {
+        chat.badgesUser = _.map(user.badges, (v, k) => { return { ...badgesChannelsRef.current.get(channel)[k].versions[v], id: k } })
+      }
       //setChatThreads(prev => [...prev, chat]);
       setChatThreads(channel, chat);
     });
@@ -192,7 +211,8 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  //useEffect(() => console.log(infoStreams), [infoStreams])
+  //useEffect(() => console.log(badgesChannels), [badgesChannels])
+  //useEffect(() => console.log(chatThreads), [chatThreads])
 
   const onLayoutChange = (layout, layouts) => {
     saveToLS("layouts", layouts);

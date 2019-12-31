@@ -59,11 +59,12 @@ export default function Panel({ channel, chatThreads, scrollBarRefs, chatBans, i
       {isPopupOpen && <Popup closePopup={() => setIsPopupOpen(false)} title={infosChannel['display_name']}>
         <div style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif" }}>
           {chatThreads.get(channel).slice(-200).map((chatThread) =>
-            <p key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", lineHeight: "1.4em" }}>
-              <small style={{ color: "grey", verticalAlign: "middle" }}>
+            <p key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", lineHeight: "1.5em" }}>
+              <small style={{ color: "grey", verticalAlign: "middle", marginRight: 5 }}>
                 {chatThread.ts}
               </small>
-              <span style={{ color: chatThread.user.color || getUserColor(chatThread.user.username), fontWeight: "bold", verticalAlign: "middle", margin: "auto 10px" }}>{chatThread.user["display-name"]}</span>
+              {chatThread.badgesUser && <span>{chatThread.badgesUser.map((badgeUser, k) => { return <img style={{ verticalAlign: "middle", marginRight: 3 }} key={k} src={badgeUser && badgeUser.image_url_1x} alt="" title={(badgeUser.id === "subscriber" && `Abonné depuis ${chatThread.user['badge-info'].subscriber} mois`) || badgeUser.title} /> })}</span>}
+              <span style={{ color: chatThread.user.color || getUserColor(chatThread.user.username), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.user["display-name"]}</span>&nbsp;
               <span style={chatThread.user["message-type"] === "action" ? { color: chatThread.user.color, verticalAlign: "middle" } : { verticalAlign: "middle" }} dangerouslySetInnerHTML={{ __html: formatEmotes(chatThread.message, chatThread.user.emotes) }} />
             </p>
           )}
