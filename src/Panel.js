@@ -37,8 +37,8 @@ function formatEmotes(text, emotes) {
           empty = Array.apply(null, new Array(length + 1 + 1)).map(function () { return '' });
         splitText = splitText.slice(0, mote[0]).concat(empty).concat(splitText.slice(mote[1] + 1 + 1, splitText.length));
         var datajson = { src: `http://static-cdn.jtvnw.net/emoticons/v1/${i}/3.0`, title: text.slice(mote[0], mote[1] + 1).replace(/[\u00A0-\u9999<>&]/gim, function (i) { return '&#' + i.charCodeAt(0) + ';'; }) }
-        //splitText.splice(mote[0], 1, `<div style="height: 28px;vertical-align: middle;display: inline-block;margin: -.5px 0;position: relative;"><img data-for="emote" data-tip=${JSON.stringify(datajson)} style="position: relative;top: 50%;left: 50%;transform: translate(-50%, -50%);" class="emoticon" alt="${datajson.title}" src="http://static-cdn.jtvnw.net/emoticons/v1/${i}/1.0"></div> `);
-        splitText.splice(mote[0], 1, `<div style="height: 28px;vertical-align: middle;display: inline-flex;align-items: center;justify-content: center;margin: -.5px 0;"><img data-for="emote" data-tip=${JSON.stringify(datajson)} class="emoticon" alt="${datajson.title}" src="http://static-cdn.jtvnw.net/emoticons/v1/${i}/1.0"></div> `);
+        //splitText.splice(mote[0], 1, `<div style="height: 28px;vertical-align: middle;display: inline-block;margin: -.5% 0;position: relative;"><img data-for="emote" data-tip=${JSON.stringify(datajson)} style="position: relative;top: 50%;left: 50%;transform: translate(-50%, -50%);" class="emoticon" alt="${datajson.title}" src="http://static-cdn.jtvnw.net/emoticons/v1/${i}/1.0"></div> `);
+        splitText.splice(mote[0], 1, `<div style="height: 1em;vertical-align: middle;display: inline-flex;align-items: center;justify-content: center;"><img data-for="emote" title="${datajson.title}" data-tip=${JSON.stringify(datajson)} class="emoticon" alt="${datajson.title}" src="http://static-cdn.jtvnw.net/emoticons/v1/${i}/1.0"></div> `);
       }
     }
   }
@@ -59,7 +59,7 @@ export default function Panel({ channel, chatThreads, scrollBarRefs, chatBans, i
       {isPopupOpen && <Popup closePopup={() => setIsPopupOpen(false)} title={infosChannel['display_name']}>
         <div style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif" }}>
           {chatThreads.get(channel).slice(-200).map((chatThread) =>
-            <p key={chatThread.id} style={{ minHeight: "28px", overflowWrap: "break-word", margin: 0, lineHeight: "28px" }}>
+            <p key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", lineHeight: "1.4em" }}>
               <small style={{ color: "grey", verticalAlign: "middle" }}>
                 {chatThread.ts}
               </small>
