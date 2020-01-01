@@ -147,7 +147,7 @@ function App() {
 
   const getBadgeLink = async (infoChannel, badgesGlobal) => {
     const badgesChannel = (await axios.get(`https://badges.twitch.tv/v1/badges/channels/${infoChannel.id}/display?language=fr`)).data;
-    return { ...badgesGlobal.badge_sets, ...badgesChannel.badge_sets }
+    return _.merge({}, badgesGlobal, badgesChannel).badge_sets;
   }
 
   useInterval(() => {

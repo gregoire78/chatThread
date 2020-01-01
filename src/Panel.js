@@ -42,7 +42,7 @@ function formatEmotes(text, emotes) {
       }
     }
   }
-  return splitText.join('').replace(/(<img\s[^>]*>)(?: )(?=<)/igm, "$1").replace(/(?:^|\s)((?:http|https|ftp|ftps):\/\/[a-zA-Z0-9\-.]+\.[a-zA-Z]{2,}(\/\S*)?)/g, " <a href=$1 target='_blank' style='color: black;vertical-align: middle;'>$1</a>");
+  return splitText.join('').replace(/(<img\s[^>]*>)(?: )(?=<)/igm, "$1").replace(/(?:^|\s)((?:http|https|ftp|ftps):\/\/[a-zA-Z0-9\-.]+\.[a-zA-Z]{2,}(\/\S*)?)/g, " <a href=$1 target='_blank' style='color: white;vertical-align: middle;'>$1</a>");
 }
 
 function getUserColor(login) {
@@ -63,7 +63,7 @@ export default function Panel({ channel, chatThreads, scrollBarRefs, chatBans, i
               <small style={{ color: "grey", verticalAlign: "middle", marginRight: 5 }}>
                 {chatThread.ts}
               </small>
-              {chatThread.badgesUser && <span>{chatThread.badgesUser.map((badgeUser, k) => { return <img style={{ verticalAlign: "middle", marginRight: 3 }} key={k} src={badgeUser && badgeUser.image_url_1x} alt="" title={(badgeUser.id === "subscriber" && `Abonné depuis ${chatThread.user['badge-info'].subscriber} mois`) || badgeUser.title} /> })}</span>}
+              {chatThread.badgesUser && <span>{chatThread.badgesUser.map((badgeUser, k) => { return <img style={{ verticalAlign: "middle", marginRight: 3 }} key={k} src={badgeUser && badgeUser.image_url_1x} alt="" title={(badgeUser.id === "subscriber" && `Abonné depuis ${chatThread.user['badge-info'].subscriber} mois`) || (badgeUser.id === "founder" && `Fondateur, abonné depuis ${chatThread.user['badge-info'].founder} mois`) || badgeUser.title} /> })}</span>}
               <span style={{ color: chatThread.user.color || getUserColor(chatThread.user.username), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.user["display-name"]}</span>&nbsp;
               <span style={chatThread.user["message-type"] === "action" ? { color: chatThread.user.color, verticalAlign: "middle" } : { verticalAlign: "middle" }} dangerouslySetInnerHTML={{ __html: formatEmotes(chatThread.message, chatThread.user.emotes) }} />
             </p>

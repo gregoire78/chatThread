@@ -31,6 +31,8 @@ const Popup = props => {
         //externalWindow.current = window.open("", props.title, `width=600,height=400,left=600,top=200`);
         externalWindow.current = PopupCenter("", props.title, 600, 600);
         externalWindow.current.document.title = props.title;
+        externalWindow.current.document.body.style.background = "#18181b";
+        externalWindow.current.document.body.style.color = "#efeff1";
         externalWindow.current.document.body.appendChild(containerEl);
         externalWindow.current.onunload = externalWindow.current.onbeforeunload = () => {
             props.closePopup();
