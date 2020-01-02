@@ -25,9 +25,9 @@ const Popup = props => {
 
     useEffect(() => {
         externalWindow.current = PopupCenter(props.url, props.title, 600, 600);
-        externalWindow.current.onbeforeunload = () => {
+        externalWindow.current.addEventListener("beforeunload", (event) => {
             props.closePopup();
-        }
+        });
         return function cleanup() {
             externalWindow.current.close();
             externalWindow.current = null;
@@ -36,7 +36,10 @@ const Popup = props => {
     }, []);
 
     useEffect(() => {
-        externalWindow.current.postMessage({ source: "app", props: JSON.parse(JSON.stringify(props)) });
+        externalWindow.current.postMessage({
+            source: "app",
+            props: JSON.parse(JSON.stringify(props))
+        }, "*");
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.chatThreadChannel])
 

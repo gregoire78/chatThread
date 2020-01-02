@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { Scrollbar } from 'react-scrollbars-custom';
+import { withRouter } from 'react-router-dom';
 import moment from 'moment';
 import Popup from './Popup';
 
 moment.locale('fr');
 
-
-export default function Panel({ channel, chatThreads, scrollBarRefs, chatBans, infosStream, infosChannel, rooms }) {
+function Panel({ channel, chatThreads, scrollBarRefs, chatBans, infosStream, infosChannel, rooms, location }) {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const isLoad = [...chatThreads.keys()].find((k) => k === channel) && chatThreads.get(channel).length > 0;
   const isLoadRoom = rooms.find((room) => room.channel === channel);
 
   return (
     <>
-      {isPopupOpen && <Popup url={"/#/chat/" + channel.replace("#", "")} chatThreadChannel={chatThreads.get(channel).slice(-200)} closePopup={() => setIsPopupOpen(false)} title={infosChannel['display_name']} />}
+      {isPopupOpen && <Popup url={window.location + "chat/" + channel.replace("#", "")} chatThreadChannel={chatThreads.get(channel).slice(-200)} closePopup={() => setIsPopupOpen(false)} title={infosChannel['display_name']} />}
       <div className={"title" + (infosStream && infosStream.type === "live" ? " live" : "")} style={isLoadRoom ? { opacity: 1 } : {}} title={infosStream && `${moment.utc(moment() - moment(infosStream.started_at)).format("HH[h]mm")} - ${infosStream.viewer_count.toLocaleString('fr-FR', { minimumFractionDigits: 0 })} - ${infosStream.title}`}>
         <img draggable={false} style={{ height: 21, userSelect: "none", marginRight: 5 }} src={infosChannel.profile_image_url} alt="" /><span style={infosStream && infosStream.type === "live" && { color: "white", fontWeight: "bold" }}>{infosChannel['display_name']}</span>
         <button className={isPopupOpen ? "open" : ""} disabled={!isLoad} onClick={() => setIsPopupOpen(!isPopupOpen)}>chat</button>
@@ -67,3 +67,5 @@ export default function Panel({ channel, chatThreads, scrollBarRefs, chatBans, i
     </>
   )
 }
+
+export default withRouter(Panel);
