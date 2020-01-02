@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react';
-import { toJS } from 'mobx';
 import tmi from 'tmi.js';
 import _ from 'lodash';
 import moment from 'moment';
@@ -94,8 +93,7 @@ function App() {
     const scrollBar = scrollBarRefs.current.get(channel);
     const isBottom = scrollBar.scrollHeight - scrollBar.scrollTop === scrollBar.clientHeight
 
-    const y = store.chatBans.get(channel)
-    store.chatBans.set(channel, y ? [...y, ban] : [ban]);
+    store.setChatBan(channel, ban);
     if (isBottom) {
       scrollBar.scrollToBottom();
     }
@@ -166,8 +164,7 @@ function App() {
       if (user.badges) {
         chat.badgesUser = _.map(user.badges, (v, k) => { return { ...badgesChannelsRef.current.get(channel)[k].versions[v], id: k } })
       }
-      const y = store.chatThreads.get(channel);
-      store.chatThreads.set(channel, [...y.slice(-2999), chat]);
+      store.setChatThread(channel, chat)
     });
 
     client.on("timeout", (channel, username, reason, duration, userstate) => {

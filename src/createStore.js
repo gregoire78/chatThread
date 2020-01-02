@@ -5,24 +5,16 @@ export function createStore() {
         rooms: [],
         chatThreads: new Map(null),
         chatBans: new Map(null),
-        makeFriend(name, isFavorite = false, isSingle = false) {
-            const oldFriend = this.friends.find(friend => friend.name === name)
-            if (oldFriend) {
-                oldFriend.isFavorite = isFavorite
-                oldFriend.isSingle = isSingle
-            } else {
-                this.friends.push({
-                    name,
-                    isFavorite,
-                    isSingle
-                })
-            }
-        },
         get singleFriends() {
             return this.friends.filter(friend => friend.isSingle)
         },
-        getChatThread(channel) {
-            return this.chatThreads.get(channel)
+        setChatThread(channel, chat) {
+            const y = this.chatThreads.get(channel);
+            this.chatThreads = new Map(this.chatThreads).set(channel, [...y.slice(-1999), chat]);
+        },
+        setChatBan(channel, ban) {
+            const y = this.chatBans.get(channel);
+            this.chatBans = new Map(this.chatBans).set(channel, y ? [...y, ban] : [ban]);
         },
         get getFriends() {
             return this.friends;
