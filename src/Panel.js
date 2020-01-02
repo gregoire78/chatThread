@@ -52,7 +52,7 @@ function getUserColor(login) {
 
 export default function Panel({ channel, chatThreads, scrollBarRefs, chatBans, infosStream, infosChannel, rooms }) {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const isLoad = [...chatThreads.keys()].find((k) => k === channel);
+  const isLoad = [...chatThreads.keys()].find((k) => k === channel) && chatThreads.get(channel).length > 0;
   const isLoadRoom = rooms.find((room) => room.channel === channel);
   return (
     <>
