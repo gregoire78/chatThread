@@ -97,3 +97,20 @@ li::before {
 li {
   counter-increment: li
 }*/
+
+.emote-preview {
+  padding: 5px;
+}
+.emote-preview p {
+  margin: 0 !important;
+  text-align: center;
+}
+
+.emote-preview.show {
+  opacity: 1 !important;
+}
+.tip {
+  padding: 3px;
+  font-size: .75em;
+  font-weight: bold;
+}

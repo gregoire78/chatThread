@@ -10,7 +10,7 @@ export function createStore() {
         },
         setChatThread(channel, chat) {
             const y = this.chatThreads.get(channel);
-            this.chatThreads = new Map(this.chatThreads).set(channel, [...y.slice(-999), chat]);
+            this.chatThreads = new Map(this.chatThreads).set(channel, y ? [...y.slice(-999), chat] : [chat]);
         },
         setChatBan(channel, ban) {
             const y = this.chatBans.get(channel);

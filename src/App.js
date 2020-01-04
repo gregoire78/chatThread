@@ -155,7 +155,9 @@ function App() {
 
     client.on("roomstate", (channel, state) => {
       store.rooms = [...store.rooms, state];
-      store.chatThreads.set(channel, []);
+      if (!store.chatThreads.get(channel)) {
+        store.chatThreads.set(channel, []);
+      }
       //console.log("%croomstate", 'color:green;', channel, state)
     });
 
