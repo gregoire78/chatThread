@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { observer, useLocalStore } from 'mobx-react';
 import _ from 'lodash';
 import ReactTooltip from 'react-tooltip';
+import chroma from 'chroma-js';
 
 const defaultColors = _.shuffle([
     "#FF0000",
@@ -45,6 +46,19 @@ function formatEmotes(text, emotes) {
 function getUserColor(login) {
     const n = login.charCodeAt(0) + login.charCodeAt(login.length - 1);
     return defaultColors[n % defaultColors.length]
+}
+
+function convertUserColor(user) {
+    let color = user.color;
+    if (!color) {
+        color = getUserColor(user.username);
+    }
+    let contrast = chroma.contrast('rgb(24, 24, 27)', color);
+    if (contrast < 4.5) {
+        color = chroma(color).brighten(4.5 - contrast).hex();
+        //console.log(contrast, 4.5 - contrast, chroma.contrast('black', color))
+    }
+    return color;
 }
 
 function Chat() {
@@ -96,7 +110,7 @@ function Chat() {
                             alt=""
                             data-tip={(badgeUser.id === "subscriber" && `Abonné depuis ${chatThread.user['badge-info'].subscriber} mois`) || (badgeUser.id === "founder" && `Fondateur, abonné depuis ${chatThread.user['badge-info'].founder} mois`) || badgeUser.title} />
                     )}</span>}
-                    <span style={{ color: chatThread.user.color || getUserColor(chatThread.user.username), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.user["display-name"]}</span>&nbsp;
+                    <span style={{ color: convertUserColor(chatThread.user), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.user["display-name"]}</span>&nbsp;
                     <span style={chatThread.user["message-type"] === "action" ? { color: chatThread.user.color, verticalAlign: "middle" } : { verticalAlign: "middle" }} dangerouslySetInnerHTML={{ __html: formatEmotes(chatThread.message, chatThread.user.emotes) }} />
                 </p>
             )}
