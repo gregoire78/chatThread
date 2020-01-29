@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { HashRouter as Router, Route, Switch } from 'react-router-dom';
 import './index.css';
-import App from './NewApp';
+import App from './App';
 import Chat from './Chat';
 import * as serviceWorker from './serviceWorker';
 import { StoreProvider } from './store';

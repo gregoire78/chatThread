@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react';
-import tmi from 'tmi.js';
+import ChatClient from 'twitch-chat-client';
+import TwitchClient from 'twitch';
 import _ from 'lodash';
 import moment from 'moment';
 import 'moment/locale/fr';
@@ -81,7 +82,6 @@ function App() {
     });
   }
   const store = useStore();
-  const [connecting, setConnecting] = useState(true);
   const [infoStreams, setInfoStreams] = useState([]);
   const [infoChannels, setInfoChannels] = useState([]);
   const [badgesChannels, setBadgesChannels] = useState(new Map());
@@ -99,6 +99,97 @@ function App() {
     }
   };
 
+  const chatListener = async () => {
+    const client = await TwitchClient.withClientCredentials(process.env.REACT_APP_TWITCH_CLIENTID, "ztmo9qkymwojpydxdtnj8c1f1axfje");
+    const channelsData = await client.helix.users.getUsersByNames(channels);
+
+    await Promise.all(channelsData.map(async (channel) => {
+      const badges = await (await client.badges.getChannelBadges(channel, true, 'fr'))._data;
+      setBadgesChannels((p) => {
+        return badgesChannelsRef.current = new Map(p).set("#" + channel.name, badges)
+      });
+    }));
+
+    const chatClient = await ChatClient.anonymous();
+    chatClient.onRegister(() => {
+      Promise.all(channels.map((channel) => chatClient.join(channel).then(() => {
+        store.rooms = [...store.rooms, "#" + channel];
+        if (!store.chatThreads.get(channel)) {
+          store.chatThreads.set(channel, []);
+        }
+      })))
+    });
+
+    chatClient.onAnyMessage(async (msg) => {
+      //if (msg.tags.get('msg-id')) console.log(msg, msg.tags.get('msg-id'))
+      switch (msg.command) {
+        case "ROOMSTATE":
+          //console.log(msg.channel.value, msg.tags)
+          break;
+
+        case "CLEARCHAT":
+          //const user = await client.helix.users.getUserById(msg.tags.get('target-user-id'));
+          const duration = msg.tags.get('ban-duration');
+          const { params: { channel, user }, tags } = msg;
+          const messages = store.chatThreads.get(channel).filter((chatThread) => user === chatThread.userName);
+          const ts = moment(tags.get('tmi-sent-ts'), "x").format('LT');
+          let ban;
+          if (duration) {
+            ban = { id: uuid(), status: "timeout", userName: user, channel, duration, ts, ts_global: moment().valueOf(), messages, color: 'darkorange' };
+            //console.log("%ctimeout", 'color: orange', channel, user, ban);
+          } else {
+            ban = { id: uuid(), status: "ban", userName: user, channel, ts, ts_global: moment().valueOf(), messages, color: 'red' };
+            //console.log("%cban", 'color: red', channel, user, ban);
+          }
+          setChatBans(channel, ban);
+          break;
+
+        default:
+          break;
+      }
+    })
+
+    chatClient.onPrivmsg((channel, user, message, msg) => {
+      let chat = {
+        id: msg.tags.get('id'),
+        status: "message",
+        message,
+        channel,
+        userName: user,
+        displayName: msg.userInfo.displayName,
+        ts: moment(msg.tags.get('tmi-sent-ts'), "x").format('LT'),
+        ts_global: moment().valueOf(),
+        parsed: msg.parseEmotes()
+      };
+      if (msg.userInfo.badges.size > 0) {
+        chat.badgesUser = [];
+        msg.userInfo.badges.forEach((v, k) => { chat.badgesUser = [...chat.badgesUser, { ...badgesChannelsRef.current.get(channel)[k].versions[v], id: k }] });
+      }
+      if (msg.tags.get('badge-info')) {
+        const badgesInfos = msg.tags.get('badge-info');
+        const parsedInfos = badgesInfos.split('/');
+        chat.badgeInfo = new Map().set(parsedInfos[0], parsedInfos[1]);
+      }
+      /*console.log(msg.parseEmotes(), msg.emoteOffsets);*/
+      //console.log(chat, channel, user, message, msg)
+      //console.log(chat)
+      store.setChatThread(channel, chat);
+    })
+
+    chatClient.onMessageRemove((channel, messageId, msg) => {
+      const { tags, userName } = msg;
+      const ts = moment(tags.get('tmi-sent-ts'), "x").format('LT');
+      let chat = store.chatThreads.get(channel).find((message) => messageId === message.id);
+      let messageDeleted = { id: uuid(), status: "messagedeleted", userName, channel, ts, ts_global: moment().valueOf(), messages: [chat], msg, color: 'blue' };
+      //console.log("%cmessagedeleted", 'color: blue', channel, userName, messageDeleted);
+      setChatBans(channel, messageDeleted);
+    })
+    /*chatClient.onTimeout((channel, user, reason, duration) => {
+      console.log(channel, user, reason, duration)
+    })*/
+    await chatClient.connect();
+  }
+
   const getInfoStreams = async () => {
     const infos = (await axios.get(`https://api.twitch.tv/helix/streams?user_login=${channels.join('&user_login=')}`, {
       headers: {
@@ -115,20 +206,6 @@ function App() {
       }
     })).data.data;
     setInfoChannels(infos);
-    const badgesGlobal = (await axios.get(`https://badges.twitch.tv/v1/badges/global/display?language=fr`)).data;
-    await Promise.all(channels.map(async (channel) => {
-      const f = infos.find((info) => "#" + info.login === channel);
-      const badges = await getBadgeLink(f, badgesGlobal);
-      setBadgesChannels((p) => {
-        return badgesChannelsRef.current = new Map(p).set(channel, badges)
-      });
-      return badges;
-    }));
-  }
-
-  const getBadgeLink = async (infoChannel, badgesGlobal) => {
-    const badgesChannel = (await axios.get(`https://badges.twitch.tv/v1/badges/channels/${infoChannel.id}/display?language=fr`)).data;
-    return _.merge({}, badgesGlobal, badgesChannel).badge_sets;
   }
 
   useInterval(() => {
@@ -138,57 +215,7 @@ function App() {
   useEffect(() => {
     getInfoStreams();
     getInfoChannels();
-    const client = new tmi.client({
-      connection: {
-        secure: true,
-        reconnect: true
-      },
-      channels
-    });
-
-    client.connect();
-    client.on("connecting", () => { setConnecting(true) });
-    client.on("connected", (address, port) => {
-      setConnecting(false);
-      console.log(connecting ? "Connecting to : " + address + ":" + port : "Connected to : " + address + ":" + port);
-    });
-
-    client.on("roomstate", (channel, state) => {
-      store.rooms = [...store.rooms, state];
-      if (!store.chatThreads.get(channel)) {
-        store.chatThreads.set(channel, []);
-      }
-      //console.log("%croomstate", 'color:green;', channel, state)
-    });
-
-    client.on("chat", async (channel, user, message, self) => {
-      let chat = { id: uuid(), status: "message", message, channel, user, ts: (user["tmi-sent-ts"] ? moment(user["tmi-sent-ts"], "x").format('LT') : moment().format('LT')), ts_global: moment().valueOf() };
-      if (user.badges) {
-        chat.badgesUser = _.map(user.badges, (v, k) => { return { ...badgesChannelsRef.current.get(channel)[k].versions[v], id: k } })
-      }
-      store.setChatThread(channel, chat)
-    });
-
-    client.on("timeout", (channel, username, reason, duration, userstate) => {
-      const messages = store.chatThreads.get(channel).filter((message) => message.user ? username === message.user.username : false);
-      let to = { id: uuid(), status: "timeout", username, channel, reason, duration, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages, userstate, color: 'darkorange' };
-      //console.log("%ctimeout", 'color: orange', channel, username, to);
-      setChatBans(channel, to);
-    });
-
-    client.on("ban", (channel, username, reason, userstate) => {
-      const messages = store.chatThreads.get(channel).filter((message) => message.user ? username === message.user.username : false)
-      let ban = { id: uuid(), status: "ban", username, channel, reason, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages, userstate, color: 'red' };
-      //console.log("%cban", 'color: red', channel, username, ban);
-      setChatBans(channel, ban);
-    });
-
-    client.on("messagedeleted", (channel, username, deletedMessage, userstate) => {
-      let chat = { id: uuid(), status: "message", message: deletedMessage, channel, ts: (userstate["tmi-sent-ts"] ? moment(userstate["tmi-sent-ts"], "x").format('LT') : moment().format('LT')), ts_global: moment().valueOf() };
-      let messageDeleted = { id: uuid(), status: "messagedeleted", username, channel, ts: moment(userstate["tmi-sent-ts"], "x").format('LT'), ts_global: moment().valueOf(), messages: [chat], userstate, color: 'blue' };
-      //console.log("%cmessagedeleted", 'color: orange', channel, username, messageDeleted);
-      setChatBans(channel, messageDeleted);
-    });
+    chatListener();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -199,44 +226,35 @@ function App() {
 
   return (
     <div className="App">
-      {connecting ? <p>connecting to chat irc</p> :
-        <>
-          {/*{[...chatThreads.keys()].map((channel) => {
+      <>
+        {<ResponsiveGridLayout
+          className="layout"
+          cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+          measureBeforeMount={false}
+          useCSSTransforms={true}
+          layouts={layouts}
+          verticalCompact={true}
+          compactType="vertical"
+          onLayoutChange={onLayoutChange}
+          isDraggable={true}
+          draggableHandle=".title"
+          onResize={(layout, oldItem, newItem, placeholder, e, element) => scrollBarRefs.current.get(element.parentElement.getAttribute('data-channel')).scrollToBottom()}
+          //onDragStart={(layout, oldItem, newItem, placeholder, e, element) => { e.target.style.cursor = "grabbing"; }}
+          onDrag={(layout, oldItem, newItem, placeholder, e, element) => { element.getElementsByClassName('title')[0].style.cursor = "grabbing" }}
+          onDragStop={(layout, oldItem, newItem, placeholder, e, element) => { element.getElementsByClassName('title')[0].style.cursor = "grab"; }}
+        >
+          {layouts.lg.map((l) => {
+            const channel = l.i;
+            const infosStream = infoStreams.find((infosStream) => "#" + infosStream.user_name.toLowerCase() === channel);
+            const infosChannel = infoChannels.find((infosChannel) => "#" + infosChannel.login === channel);
             return (
-              <div key={channel}>
-                <p>{channel}</p>
-                {chatThreads.get(channel).map(chatThread => <p key={chatThread.id}>{chatThread.message}</p>)}
-              </div>)
+              <div key={channel} className="channel" data-channel={channel}>
+                <Panel channel={channel} chatThreads={store.chatThreads} scrollBarRefs={scrollBarRefs} chatBans={store.chatBans} infosStream={infosStream} infosChannel={infosChannel} rooms={store.rooms} />
+              </div>
+            )
           })}
-        <hr />*/}
-          <ResponsiveGridLayout
-            className="layout"
-            cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-            measureBeforeMount={false}
-            useCSSTransforms={true}
-            layouts={layouts}
-            verticalCompact={true}
-            compactType="vertical"
-            onLayoutChange={onLayoutChange}
-            isDraggable={true}
-            draggableHandle=".title"
-            onResize={(layout, oldItem, newItem, placeholder, e, element) => scrollBarRefs.current.get(element.parentElement.getAttribute('data-channel')).scrollToBottom()}
-            //onDragStart={(layout, oldItem, newItem, placeholder, e, element) => { e.target.style.cursor = "grabbing"; }}
-            onDrag={(layout, oldItem, newItem, placeholder, e, element) => { element.getElementsByClassName('title')[0].style.cursor = "grabbing" }}
-            onDragStop={(layout, oldItem, newItem, placeholder, e, element) => { element.getElementsByClassName('title')[0].style.cursor = "grab"; }}
-          >
-            {layouts.lg.map((l) => {
-              const channel = l.i;
-              const infosStream = infoStreams.find((infosStream) => "#" + infosStream.user_name.toLowerCase() === channel);
-              const infosChannel = infoChannels.find((infosChannel) => "#" + infosChannel.login === channel);
-              return (
-                <div key={channel} className="channel" data-channel={channel}>
-                  <Panel channel={channel} chatThreads={store.chatThreads} scrollBarRefs={scrollBarRefs} chatBans={store.chatBans} infosStream={infosStream} infosChannel={infosChannel} rooms={store.rooms} />
-                </div>
-              )
-            })}
-          </ResponsiveGridLayout>
-        </>}
+        </ResponsiveGridLayout>}
+      </>
     </div>
   );
 }
