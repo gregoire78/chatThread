@@ -100,7 +100,7 @@ function App() {
   };
 
   const chatListener = async () => {
-    const client = await TwitchClient.withClientCredentials(process.env.REACT_APP_TWITCH_CLIENTID, "ztmo9qkymwojpydxdtnj8c1f1axfje");
+    const client = await TwitchClient.withClientCredentials(process.env.REACT_APP_TWITCH_CLIENTID, process.env.REACT_APP_TWITCH_CLIENTSECRET);
     const channelsData = await client.helix.users.getUsersByNames(channels);
 
     await Promise.all(channelsData.map(async (channel) => {
