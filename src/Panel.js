@@ -9,13 +9,13 @@ moment.locale('fr');
 function Panel({ channel, chatThreads, scrollBarRefs, chatBans, infosStream, infosChannel, rooms, location }) {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const isLoad = [...chatThreads.keys()].find((k) => k === channel) && chatThreads.get(channel).length > 0;
-  const isLoadRoom = rooms.find((room) => room.channel === channel);
+  const isLoadRoom = rooms.find((room) => room === channel);
 
   return (
     <>
-      {isPopupOpen && <Popup url={window.location + "chat/" + channel.replace("#", "")} chatThreadChannel={chatThreads.get(channel).slice(-200)} closePopup={() => setIsPopupOpen(false)} title={infosChannel['display_name']} />}
+      {isPopupOpen && <Popup url={window.location + "chat/" + channel.replace('#', '')} chatThreadChannel={chatThreads.get(channel).slice(-200)} closePopup={() => setIsPopupOpen(false)} title={infosChannel && infosChannel['display_name']} />}
       <div className={"title" + (infosStream && infosStream.type === "live" ? " live" : "")} style={isLoadRoom ? { opacity: 1 } : {}} title={infosStream && `${moment.utc(moment() - moment(infosStream.started_at)).format("HH[h]mm")} - ${infosStream.viewer_count.toLocaleString('fr-FR', { minimumFractionDigits: 0 })} - ${infosStream.title}`}>
-        <img draggable={false} style={{ height: 21, userSelect: "none", marginRight: 5 }} src={infosChannel.profile_image_url} alt="" /><span style={infosStream && infosStream.type === "live" && { color: "white", fontWeight: "bold" }}>{infosChannel['display_name']}</span>
+        <img draggable={false} style={{ height: 21, userSelect: "none", marginRight: 5 }} src={infosChannel && infosChannel.profile_image_url} alt="" /><span style={infosStream && infosStream.type === "live" && { color: "white", fontWeight: "bold" }}>{infosChannel && infosChannel['display_name']}</span>
         <button className={isPopupOpen ? "open" : ""} disabled={!isLoad} onClick={() => setIsPopupOpen(!isPopupOpen)}>chat</button>
       </div>
 
@@ -49,20 +49,18 @@ function Panel({ channel, chatThreads, scrollBarRefs, chatBans, infosStream, inf
         style={{ height: 'calc(100% - 21px)' }}
       >
         {/*new Array(1000).fill(0).map((v,i) => <p key={i}>test</p>)*/}
-        {chatBans.get(channel) && chatBans.get(channel).slice(-99).map(chatBan => {
-          return (
-            <div key={chatBan.id}>
-              <p><small>({chatBan.ts})</small> <span style={{ color: chatBan.color }}>{chatBan.status}</span> <small>{chatBan.userstate['ban-duration'] && moment.duration(parseInt(chatBan.userstate['ban-duration']), "seconds").humanize()}</small> : {chatBan.username}</p>
-              <ul>
-                {chatBan.userstate['ban-duration'] && parseInt(chatBan.userstate['ban-duration']) <= 600 ? chatBan.messages.slice(-1).map((message) =>
-                  <li key={message.id}><small>({message.ts})</small> {message.message}</li>
-                ) : chatBan.messages.map((message) =>
-                  <li key={message.id}><small>({message.ts})</small> {message.message}</li>
-                )}
-              </ul>
-            </div>
-          )
-        })}
+        {chatBans.get(channel) && chatBans.get(channel).slice(-99).map(chatBan =>
+          <div key={chatBan.id}>
+            <p><small>({chatBan.ts})</small> <span style={{ color: chatBan.color }}>{chatBan.status}</span> <small>{chatBan.duration && moment.duration(parseInt(chatBan.duration), "seconds").humanize()}</small> : {chatBan.userName}</p>
+            <ul>
+              {chatBan.duration && parseInt(chatBan.duration) <= 600 ? chatBan.messages.slice(-1).map((message) =>
+                <li key={message.id}><small>({message.ts})</small> {message.message}</li>
+              ) : chatBan.messages.map((message) =>
+                <li key={message.id}><small>({message.ts})</small> {message.message}</li>
+              )}
+            </ul>
+          </div>
+        )}
       </Scrollbar>
     </>
   )

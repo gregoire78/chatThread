@@ -13,6 +13,7 @@
     "mobx": "^5.15.1",
     "mobx-react": "^6.1.4",
     "moment": "^2.24.0",
+    "parse-msg": "file:packages/parse-msg",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-grid-layout": "^0.17.1",
@@ -20,7 +21,8 @@
     "react-scripts": "3.3.0",
     "react-scrollbars-custom": "^4.0.21",
     "react-tooltip": "^3.11.1",
-    "tmi.js": "^1.5.0",
+    "twitch": "file:packages/twitch",
+    "twitch-chat-client": "^3.7.1",
     "uuid": "^3.3.3"
   },
   "scripts": {

@@ -3,6 +3,7 @@ import { observer, useLocalStore } from 'mobx-react';
 import _ from 'lodash';
 import ReactTooltip from 'react-tooltip';
 import chroma from 'chroma-js';
+import { formatText } from 'parse-msg';
 
 const defaultColors = _.shuffle([
     "#FF0000",
@@ -22,25 +23,22 @@ const defaultColors = _.shuffle([
     "#00FF7F"
 ]);
 
-function formatEmotes(text, emotes) {
-    var splitText = text.split('');
-    for (var i in emotes) {
-        var e = emotes[i];
-        for (var j in e) {
-            var mote = e[j];
-            if (typeof mote == 'string') {
-                mote = mote.split('-');
-                mote = [parseInt(mote[0]), parseInt(mote[1])];
-                var length = mote[1] - mote[0],
-                    empty = Array.apply(null, new Array(length + 1 + 1)).map(function () { return '' });
-                splitText = splitText.slice(0, mote[0]).concat(empty).concat(splitText.slice(mote[1] + 1 + 1, splitText.length));
-                var datajson = { src: `http://static-cdn.jtvnw.net/emoticons/v1/${i}/3.0`, title: text.slice(mote[0], mote[1] + 1).replace(/[\u00A0-\u9999<>&]/gim, function (i) { return '&#' + i.charCodeAt(0) + ';'; }) }
-                //splitText.splice(mote[0], 1, `<div style="height: 28px;vertical-align: middle;display: inline-block;margin: -.5% 0;position: relative;"><img data-for="emote" data-tip=${JSON.stringify(datajson)} style="position: relative;top: 50%;left: 50%;transform: translate(-50%, -50%);" class="emoticon" alt="${datajson.title}" src="http://static-cdn.jtvnw.net/emoticons/v1/${i}/1.0"></div> `);
-                splitText.splice(mote[0], 1, `<div data-for="emote" style="height: 1em;vertical-align: middle;display: inline-flex;align-items: center;justify-content: center;"><img data-for="emote" data-tip=${JSON.stringify(datajson)} class="emoticon" alt="${datajson.title}" src="http://static-cdn.jtvnw.net/emoticons/v1/${i}/1.0"></div> `);
-            }
-        }
+function formatTipForBadge(badgeUser, chatThread) {
+    let text = "";
+    switch (badgeUser.id) {
+        case "subscriber":
+            text = `Abonné depuis ${chatThread.badgeInfo.subscriber} mois`
+            break;
+
+        case "founder":
+            text = `Fondateur, abonné depuis ${chatThread.badgeInfo.founder} mois`
+            break;
+
+        default:
+            text = badgeUser.title
+            break;
     }
-    return splitText.join('').replace(/(<img\s[^>]*>)(?: )(?=<)/igm, "$1").replace(/(?:^|\s)((?:http|https|ftp|ftps):\/\/[a-zA-Z0-9\-.]+\.[a-zA-Z]{2,}(\/\S*)?)/g, " <a href=$1 target='_blank' style='color: white;vertical-align: middle;'>$1</a>");
+    return text;
 }
 
 function getUserColor(login) {
@@ -51,7 +49,7 @@ function getUserColor(login) {
 function convertUserColor(user) {
     let color = user.color;
     if (!color) {
-        color = getUserColor(user.username);
+        color = getUserColor(user);
     }
     let contrast = chroma.contrast('rgb(24, 24, 27)', color);
     if (contrast < 4.5) {
@@ -108,10 +106,10 @@ function Chat() {
                         <img style={{ verticalAlign: "middle", marginRight: 3 }}
                             key={k} src={badgeUser && badgeUser.image_url_1x}
                             alt=""
-                            data-tip={(badgeUser.id === "subscriber" && `Abonné depuis ${chatThread.user['badge-info'].subscriber} mois`) || (badgeUser.id === "founder" && `Fondateur, abonné depuis ${chatThread.user['badge-info'].founder} mois`) || badgeUser.title} />
+                            data-tip={formatTipForBadge(badgeUser, chatThread)} />
                     )}</span>}
-                    <span style={{ color: convertUserColor(chatThread.user), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.user["display-name"]}</span>&nbsp;
-                    <span style={chatThread.user["message-type"] === "action" ? { color: chatThread.user.color, verticalAlign: "middle" } : { verticalAlign: "middle" }} dangerouslySetInnerHTML={{ __html: formatEmotes(chatThread.message, chatThread.user.emotes) }} />
+                    <span style={{ color: convertUserColor(chatThread.userName), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName}</span>&nbsp;
+                    <span style={{ verticalAlign: "middle" }} dangerouslySetInnerHTML={{ __html: formatText(chatThread.parsed) }} />
                 </p>
             )}
             <ReactTooltip type="light" id="emote" scrollHide={false} place="top" border={true} className="emote-preview" getContent={datumAsText => {
