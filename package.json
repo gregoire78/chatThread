@@ -1,4 +1,7 @@
 {
+  "workspaces": [
+    "packages/*"
+  ],
   "name": "chat",
   "version": "0.1.0",
   "private": true,
