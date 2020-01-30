@@ -82,6 +82,12 @@ export default class HelixStreamAPI extends BaseAPI {
      */
     getStreamByUserName(user: UserNameResolvable): Promise<HelixStream | null>;
     /**
+     * Retrieves the current stream for the given user names.
+     *
+     * @param users The users name to retrieve the stream for.
+     */
+    getStreamByUserNames(users: UserNameResolvable[]): Promise<HelixStream[]>;
+    /**
      * Retrieves the current stream for the given user ID.
      *
      * @param user The user ID to retrieve the stream for.

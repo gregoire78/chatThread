@@ -6,7 +6,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import 'moment/locale/fr';
 import uuid from 'uuid/v4';
-import axios from 'axios';
+//import axios from 'axios';
 import { WidthProvider, Responsive } from "react-grid-layout";
 
 import Panel from './Panel';
@@ -19,6 +19,7 @@ import './App.css';
 moment.locale('fr');
 const ResponsiveGridLayout = WidthProvider(Responsive);
 //const originalLayout = getFromLS("layouts") || {};
+const client = TwitchClient.withClientCredentials(process.env.REACT_APP_TWITCH_CLIENTID, process.env.REACT_APP_TWITCH_CLIENTSECRET);
 
 function useInterval(callback, delay) {
   const savedCallback = useRef();
@@ -77,7 +78,7 @@ function App() {
         y: Infinity,
         w: w,
         h: h,
-        i: "#" + item,
+        i: item,
       };
     });
   }
@@ -87,7 +88,7 @@ function App() {
   const [badgesChannels, setBadgesChannels] = useState(new Map());
   const badgesChannelsRef = useRef(badgesChannels);
   const scrollBarRefs = useRef(new Map());
-  const [layouts, setLayouts] = useState({ ...getFromLS("layouts"), ...{ lg: _.uniqBy([...getFromLS("layouts") ? getFromLS("layouts").lg.filter((i) => channels.includes(i.i.replace("#", ""))) : [], ...generateLayout()], 'i') } });
+  const [layouts, setLayouts] = useState({ ...getFromLS("layouts"), ...{ lg: _.uniqBy([...getFromLS("layouts") ? getFromLS("layouts").lg.filter((i) => channels.includes(i.i)) : [], ...generateLayout()], 'i') } });
 
   const setChatBans = (channel, ban) => {
     const scrollBar = scrollBarRefs.current.get(channel);
@@ -100,22 +101,25 @@ function App() {
   };
 
   const chatListener = async () => {
-    const client = await TwitchClient.withClientCredentials(process.env.REACT_APP_TWITCH_CLIENTID, process.env.REACT_APP_TWITCH_CLIENTSECRET);
-    const channelsData = await client.helix.users.getUsersByNames(channels);
 
-    await Promise.all(channelsData.map(async (channel) => {
-      const badges = await (await client.badges.getChannelBadges(channel, true, 'fr'))._data;
+    const channelsData = await client.helix.users.getUsersByNames(channels);
+    setInfoChannels(channelsData);
+
+    const badgesGlobal = await (await client.badges.getGlobalBadges('fr'))._data;
+    Promise.all(channelsData.map(async (channel) => {
+      const badges = await (await client.badges.getChannelBadges(channel, false, 'fr'))._data;
       setBadgesChannels((p) => {
-        return badgesChannelsRef.current = new Map(p).set("#" + channel.name, badges)
+        return badgesChannelsRef.current = new Map(p).set("#" + channel.name, _.merge({}, badgesGlobal, badges))
       });
     }));
 
     const chatClient = await ChatClient.anonymous();
     chatClient.onRegister(() => {
       Promise.all(channels.map((channel) => chatClient.join(channel).then(() => {
-        store.rooms = [...store.rooms, "#" + channel];
-        if (!store.chatThreads.get(channel)) {
-          store.chatThreads.set(channel, []);
+        const channelTag = "#" + channel;
+        store.rooms = [...store.rooms, channel];
+        if (!store.chatThreads.get(channelTag)) {
+          store.chatThreads.set(channelTag, []);
         }
       })))
     });
@@ -124,7 +128,7 @@ function App() {
       //if (msg.tags.get('msg-id')) console.log(msg, msg.tags.get('msg-id'))
       switch (msg.command) {
         case "ROOMSTATE":
-          //console.log(msg.channel.value, msg.tags)
+          console.log(msg.channel.value, msg.tags)
           break;
 
         case "CLEARCHAT":
@@ -170,9 +174,6 @@ function App() {
         const parsedInfos = badgesInfos.split('/');
         chat.badgeInfo = new Map().set(parsedInfos[0], parsedInfos[1]);
       }
-      /*console.log(msg.parseEmotes(), msg.emoteOffsets);*/
-      //console.log(chat, channel, user, message, msg)
-      //console.log(chat)
       store.setChatThread(channel, chat);
     })
 
@@ -184,28 +185,12 @@ function App() {
       //console.log("%cmessagedeleted", 'color: blue', channel, userName, messageDeleted);
       setChatBans(channel, messageDeleted);
     })
-    /*chatClient.onTimeout((channel, user, reason, duration) => {
-      console.log(channel, user, reason, duration)
-    })*/
     await chatClient.connect();
   }
 
   const getInfoStreams = async () => {
-    const infos = (await axios.get(`https://api.twitch.tv/helix/streams?user_login=${channels.join('&user_login=')}`, {
-      headers: {
-        'Client-ID': process.env.REACT_APP_TWITCH_CLIENTID
-      }
-    })).data.data;
+    const infos = await client.helix.streams.getStreamByUserNames(channels);
     setInfoStreams(infos);
-  }
-
-  const getInfoChannels = async () => {
-    const infos = (await axios.get(`https://api.twitch.tv/helix/users?login=${channels.join('&login=')}`, {
-      headers: {
-        'Client-ID': process.env.REACT_APP_TWITCH_CLIENTID
-      }
-    })).data.data;
-    setInfoChannels(infos);
   }
 
   useInterval(() => {
@@ -214,7 +199,6 @@ function App() {
 
   useEffect(() => {
     getInfoStreams();
-    getInfoChannels();
     chatListener();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -245,8 +229,9 @@ function App() {
         >
           {layouts.lg.map((l) => {
             const channel = l.i;
-            const infosStream = infoStreams.find((infosStream) => "#" + infosStream.user_name.toLowerCase() === channel);
-            const infosChannel = infoChannels.find((infosChannel) => "#" + infosChannel.login === channel);
+            const infosStream = infoStreams.find((infosStream) => infosStream.userDisplayName.toLowerCase() === channel);
+            const infosChannel = infoChannels.find((infosChannel) => infosChannel.name === channel);
+
             return (
               <div key={channel} className="channel" data-channel={channel}>
                 <Panel channel={channel} chatThreads={store.chatThreads} scrollBarRefs={scrollBarRefs} chatBans={store.chatBans} infosStream={infosStream} infosChannel={infosChannel} rooms={store.rooms} />

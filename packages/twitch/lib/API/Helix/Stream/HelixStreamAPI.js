@@ -94,6 +94,21 @@ var HelixStreamAPI = /** @class */ (function (_super) {
         });
     };
     /**
+     * Retrieves the current stream for the given user names.
+     *
+     * @param users The users name to retrieve the stream for.
+     */
+    HelixStreamAPI.prototype.getStreamByUserNames = function (users) {
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.getStreams({ userName: users.map(UserTools_1.extractUserName) })];
+                    case 1: return [2 /*return*/, (_a.sent()).data];
+                }
+            });
+        });
+    };
+    /**
      * Retrieves the current stream for the given user ID.
      *
      * @param user The user ID to retrieve the stream for.
