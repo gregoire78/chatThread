@@ -128,7 +128,7 @@ function App() {
       //if (msg.tags.get('msg-id')) console.log(msg, msg.tags.get('msg-id'))
       switch (msg.command) {
         case "ROOMSTATE":
-          console.log(msg.channel.value, msg.tags)
+          //console.log(msg.channel.value, msg.tags)
           break;
 
         case "CLEARCHAT":
@@ -163,11 +163,15 @@ function App() {
         displayName: msg.userInfo.displayName,
         ts: moment(msg.tags.get('tmi-sent-ts'), "x").format('LT'),
         ts_global: moment().valueOf(),
-        parsed: msg.parseEmotes()
+        parsed: msg.parseEmotes(),
+        userInfo: { userName: user }
       };
       if (msg.userInfo.badges.size > 0) {
         chat.badgesUser = [];
         msg.userInfo.badges.forEach((v, k) => { chat.badgesUser = [...chat.badgesUser, { ...badgesChannelsRef.current.get(channel)[k].versions[v], id: k }] });
+      }
+      if (msg.userInfo.color) {
+        chat.userInfo = { color: msg.userInfo.color, userName: user }
       }
       if (msg.tags.get('badge-info')) {
         const badgesInfos = msg.tags.get('badge-info');
@@ -185,6 +189,35 @@ function App() {
       //console.log("%cmessagedeleted", 'color: blue', channel, userName, messageDeleted);
       setChatBans(channel, messageDeleted);
     })
+
+    chatClient.onAction((channel, user, message, msg) => {
+      let chat = {
+        id: msg.tags.get('id'),
+        status: "action",
+        message,
+        channel,
+        userName: user,
+        displayName: msg.userInfo.displayName,
+        ts: moment(msg.tags.get('tmi-sent-ts'), "x").format('LT'),
+        ts_global: moment().valueOf(),
+        parsed: msg.parseEmotes(),
+        userInfo: { userName: user }
+      };
+      if (msg.userInfo.badges.size > 0) {
+        chat.badgesUser = [];
+        msg.userInfo.badges.forEach((v, k) => { chat.badgesUser = [...chat.badgesUser, { ...badgesChannelsRef.current.get(channel)[k].versions[v], id: k }] });
+      }
+      if (msg.userInfo.color) {
+        chat.userInfo = { color: msg.userInfo.color, userName: user }
+      }
+      if (msg.tags.get('badge-info')) {
+        const badgesInfos = msg.tags.get('badge-info');
+        const parsedInfos = badgesInfos.split('/');
+        chat.badgeInfo = new Map().set(parsedInfos[0], parsedInfos[1]);
+      }
+      store.setChatThread(channel, chat);
+    })
+
     await chatClient.connect();
   }
 
@@ -222,7 +255,7 @@ function App() {
           onLayoutChange={onLayoutChange}
           isDraggable={true}
           draggableHandle=".title"
-          onResize={(layout, oldItem, newItem, placeholder, e, element) => scrollBarRefs.current.get(element.parentElement.getAttribute('data-channel')).scrollToBottom()}
+          onResize={(layout, oldItem, newItem, placeholder, e, element) => scrollBarRefs.current.get("#" + element.parentElement.getAttribute('data-channel')).scrollToBottom()}
           //onDragStart={(layout, oldItem, newItem, placeholder, e, element) => { e.target.style.cursor = "grabbing"; }}
           onDrag={(layout, oldItem, newItem, placeholder, e, element) => { element.getElementsByClassName('title')[0].style.cursor = "grabbing" }}
           onDragStop={(layout, oldItem, newItem, placeholder, e, element) => { element.getElementsByClassName('title')[0].style.cursor = "grab"; }}

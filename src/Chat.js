@@ -3,7 +3,7 @@ import { observer, useLocalStore } from 'mobx-react';
 import _ from 'lodash';
 import ReactTooltip from 'react-tooltip';
 import chroma from 'chroma-js';
-import { formatText } from 'parse-msg';
+import { formatText, getAsString } from 'parse-msg';
 
 const defaultColors = _.shuffle([
     "#FF0000",
@@ -49,7 +49,7 @@ function getUserColor(login) {
 function convertUserColor(user) {
     let color = user.color;
     if (!color) {
-        color = getUserColor(user);
+        color = getUserColor(user.userName);
     }
     let contrast = chroma.contrast('rgb(24, 24, 27)', color);
     if (contrast < 4.5) {
@@ -108,8 +108,8 @@ function Chat() {
                             alt=""
                             data-tip={formatTipForBadge(badgeUser, chatThread)} />
                     )}</span>}
-                    <span style={{ color: convertUserColor(chatThread.userName), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName}</span>&nbsp;
-                    <span style={{ verticalAlign: "middle" }} dangerouslySetInnerHTML={{ __html: formatText(chatThread.parsed) }} />
+                    <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName}</span>&nbsp;
+                    <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} dangerouslySetInnerHTML={{ __html: chatThread.status === "action" ? getAsString(chatThread.message) : formatText(chatThread.parsed) }} />
                 </p>
             )}
             <ReactTooltip type="light" id="emote" scrollHide={false} place="top" border={true} className="emote-preview" getContent={datumAsText => {
