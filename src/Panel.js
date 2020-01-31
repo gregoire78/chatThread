@@ -15,7 +15,7 @@ function Panel({ channel, chatThreads, scrollBarRefs, chatBans, infosStream, inf
   return (
     <>
       {isPopupOpen && <Popup url={window.location + "chat/" + channel} chatThreadChannel={chatThreads.get(channelTag).slice(-200)} closePopup={() => setIsPopupOpen(false)} title={infosChannel && infosChannel.displayName} />}
-      <div className={"title" + (infosStream && infosStream.type === "live" ? " live" : "")} style={loadedRoom ? { opacity: 1 } : {}} title={infosStream && `${moment.utc(moment() - moment(infosStream.started_at)).format("HH[h]mm")} - ${infosStream.viewers.toLocaleString('fr-FR', { minimumFractionDigits: 0 })} - ${infosStream.title}`}>
+      <div className={"title" + (infosStream && infosStream.type === "live" ? " live" : "")} style={loadedRoom ? { opacity: 1 } : {}} title={infosStream && `${moment.utc(moment() - moment(infosStream.startDate)).format("HH[h]mm")} - ${infosStream.viewers.toLocaleString('fr-FR', { minimumFractionDigits: 0 })} - ${infosStream.title}`}>
         <img draggable={false} style={{ height: 21, userSelect: "none", marginRight: 5 }} src={infosChannel && infosChannel.profilePictureUrl} alt="" /><span style={infosStream && infosStream.type === "live" && { color: "white", fontWeight: "bold" }}>{infosChannel && infosChannel.displayName}</span>
         <button className={isPopupOpen ? "open" : ""} disabled={!isLoad} onClick={() => setIsPopupOpen(!isPopupOpen)}>chat</button>
       </div>

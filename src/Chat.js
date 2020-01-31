@@ -64,6 +64,9 @@ function Chat() {
         chatThread: [],
         autoScroll: true,
     }));
+    useEffect(()=>{
+        ReactTooltip.rebuild();
+    }, [mystore.chatThread]);
     useEffect(() => {
         document.body.style.margin = "10px";
         document.body.style.background = "#18181b";
@@ -71,7 +74,6 @@ function Chat() {
         window.scrollTo(0, document.body.scrollHeight);
         window.addEventListener("message", (e) => {
             if (e.data.source === "app" && e.data.props) {
-                ReactTooltip.rebuild();
                 document.title = e.data.props.title;
                 mystore.chatThread = e.data.props.chatThreadChannel
             }
@@ -112,16 +114,16 @@ function Chat() {
                     <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} dangerouslySetInnerHTML={{ __html: formatText(chatThread.parsed) }} />
                 </p>
             )}
-            <ReactTooltip type="light" id="emote" scrollHide={false} place="top" border={true} className="emote-preview" getContent={datumAsText => {
+            <ReactTooltip id="emote" border={true} className="emote-preview" getContent={datumAsText => {
                 if (datumAsText == null) {
                     return;
                 }
                 let v = JSON.parse(datumAsText);
                 return (
-                    <><img src={v.src} alt="" /><p>{v.title}</p></>
+                    <><img src={v.src} alt={v.title} /><p>{v.title}</p></>
                 );
             }} />
-            <ReactTooltip border={true} type="light" scrollHide={false} className="emote-preview tip" effect="solid" place="top" />
+            <ReactTooltip border={true} className="emote-preview tip" />
         </div>
     )
 }
