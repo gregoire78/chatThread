@@ -114,7 +114,7 @@ function Chat() {
                     <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} dangerouslySetInnerHTML={{ __html: formatText(chatThread.parsed) }} />
                 </p>
             )}
-            <ReactTooltip id="emote" border={true} className="emote-preview" getContent={datumAsText => {
+            <ReactTooltip id="emote" effect="solid" border={true} className="emote-preview" getContent={datumAsText => {
                 if (datumAsText == null) {
                     return;
                 }
@@ -123,7 +123,7 @@ function Chat() {
                     <><img src={v.src} alt={v.title} /><p>{v.title}</p></>
                 );
             }} />
-            <ReactTooltip border={true} className="emote-preview tip" />
+            <ReactTooltip border={true} effect="solid" className="emote-preview tip" />
         </div>
     )
 }

@@ -184,7 +184,7 @@ function App() {
     chatClient.onMessageRemove((channel, messageId, msg) => {
       const { tags, userName } = msg;
       const ts = moment(tags.get('tmi-sent-ts'), "x").format('LT');
-      let chat = store.chatThreads.get(channel).find((message) => messageId === message.id);
+      let chat = store.chatThreads.get(channel).find((message) => message.id && messageId === message.id);
       let messageDeleted = { id: uuid(), status: "messagedeleted", userName, channel, ts, ts_global: moment().valueOf(), messages: [chat], msg, color: 'blue' };
       //console.log("%cmessagedeleted", 'color: blue', channel, userName, messageDeleted);
       setChatBans(channel, messageDeleted);

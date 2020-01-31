@@ -109,6 +109,9 @@ li {
 .emote-preview.show {
   opacity: 1 !important;
 }
+.emote-preview img {
+  max-height: 112px;
+}
 .tip {
   padding: 3px;
   font-size: .75em;
