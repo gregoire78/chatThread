@@ -200,7 +200,7 @@ function App() {
         displayName: msg.userInfo.displayName,
         ts: moment(msg.tags.get('tmi-sent-ts'), "x").format('LT'),
         ts_global: moment().valueOf(),
-        parsed: msg.parseEmotes(),
+        parsed: msg.parseEmotes(message),
         userInfo: { userName: user }
       };
       if (msg.userInfo.badges.size > 0) {

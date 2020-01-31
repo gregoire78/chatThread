@@ -25,7 +25,7 @@
     "react-scrollbars-custom": "^4.0.21",
     "react-tooltip": "^3.11.1",
     "twitch": "file:packages/twitch",
-    "twitch-chat-client": "^3.7.1",
+    "twitch-chat-client": "file:packages/twitch-chat-client",
     "uuid": "^3.3.3"
   },
   "scripts": {

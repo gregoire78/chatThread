@@ -1,31 +1,34 @@
 {
-  "name": "twitch",
+  "name": "twitch-chat-client",
   "version": "3.7.1",
-  "description": "Interact with Twitch's API.",
+  "description": "Interact with the Twitch Messaging Interface (aka Twitch chat).",
   "keywords": [
     "twitch",
-    "api",
+    "tmi",
     "stream",
-    "kraken",
-    "helix",
-    "chatters",
-    "bot"
+    "chat",
+    "bot",
+    "events"
   ],
   "main": "lib",
   "types": "lib/index",
   "repository": {
     "type": "git",
     "url": "https://github.com/d-fischer/twitch.git",
-    "directory": "packages/twitch"
+    "directory": "packages/twitch-chat-client"
   },
   "author": "Daniel Fischer <daniel@d-fischer.dev>",
   "license": "MIT",
   "dependencies": {
-    "@types/qs": "^6.5.1",
-    "fetch-ponyfill": "^6.0.2",
-    "qs": "^6.6.0",
-    "top-package": "^1.0.0",
+    "@d-fischer/logger": "^0.1.0",
+    "ircv3": "^0.19.3",
     "tslib": "^1.9.3"
+  },
+  "devDependencies": {
+    "twitch": "^3.7.1"
+  },
+  "peerDependencies": {
+    "twitch": "^3.0.0"
   },
   "files": [
     "LICENSE",

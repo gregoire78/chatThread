@@ -3,7 +3,7 @@ import { observer, useLocalStore } from 'mobx-react';
 import _ from 'lodash';
 import ReactTooltip from 'react-tooltip';
 import chroma from 'chroma-js';
-import { formatText, getAsString } from 'parse-msg';
+import { formatText } from 'parse-msg';
 
 const defaultColors = _.shuffle([
     "#FF0000",
@@ -109,7 +109,7 @@ function Chat() {
                             data-tip={formatTipForBadge(badgeUser, chatThread)} />
                     )}</span>}
                     <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName}</span>&nbsp;
-                    <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} dangerouslySetInnerHTML={{ __html: chatThread.status === "action" ? getAsString(chatThread.message) : formatText(chatThread.parsed) }} />
+                    <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} dangerouslySetInnerHTML={{ __html: formatText(chatThread.parsed) }} />
                 </p>
             )}
             <ReactTooltip type="light" id="emote" scrollHide={false} place="top" border={true} className="emote-preview" getContent={datumAsText => {
