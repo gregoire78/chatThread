@@ -123,7 +123,7 @@ function Chat() {
                     <><img src={v.src} alt={v.title} /><p>{v.title}</p></>
                 );
             }} />
-            <ReactTooltip border={true} effect="solid" className="emote-preview tip" />
+            <ReactTooltip border={true} place="right" effect="solid" className="emote-preview tip" />
         </div>
     )
 }
