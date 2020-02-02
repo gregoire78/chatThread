@@ -12,6 +12,7 @@ import { WidthProvider, Responsive } from "react-grid-layout";
 import Panel from './Panel';
 import { useStore } from './store';
 
+import 'react-tippy/dist/tippy.css';
 import '../node_modules/react-grid-layout/css/styles.css';
 import '../node_modules/react-resizable/css/styles.css';
 import './App.css';

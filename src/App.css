@@ -101,6 +101,7 @@ li {
 .emote-preview {
   padding: 5px;
 }
+
 .emote-preview p {
   margin: 0 !important;
   text-align: center;
@@ -109,11 +110,13 @@ li {
 .emote-preview.show {
   opacity: 1 !important;
 }
-.emote-preview img {
-  max-height: 112px;
-}
+
 .tip {
   padding: 3px;
   font-size: .75em;
   font-weight: bold;
+}
+
+.tippy-tooltip [x-circle] {
+  border-radius: 0%;
 }

@@ -2,8 +2,9 @@ import React, { useEffect } from 'react';
 import { observer, useLocalStore } from 'mobx-react';
 import _ from 'lodash';
 import ReactTooltip from 'react-tooltip';
+import { Tooltip } from 'react-tippy';
 import chroma from 'chroma-js';
-import { formatText } from 'parse-msg';
+import { parseUrls } from 'parse-msg';
 
 const defaultColors = _.shuffle([
     "#FF0000",
@@ -58,13 +59,17 @@ function convertUserColor(user) {
     }
     return color;
 }
-
+function preloadImage(url) {
+    var img = new Image();
+    img.src = url;
+    return url
+}
 function Chat() {
     const mystore = useLocalStore(() => ({
         chatThread: [],
         autoScroll: true,
     }));
-    useEffect(()=>{
+    useEffect(() => {
         ReactTooltip.rebuild();
     }, [mystore.chatThread]);
     useEffect(() => {
@@ -100,7 +105,7 @@ function Chat() {
     return (
         <div className="chat-thread" style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif" }}>
             {mystore.chatThread.length > 0 && mystore.chatThread.map((chatThread) =>
-                <p key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", lineHeight: "1.5em" }}>
+                <div key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", lineHeight: "1.5em" }}>
                     <small style={{ color: "grey", verticalAlign: "middle", marginRight: 5 }}>
                         {chatThread.ts}
                     </small>
@@ -111,18 +116,52 @@ function Chat() {
                             data-tip={formatTipForBadge(badgeUser, chatThread)} />
                     )}</span>}
                     <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName}</span>&nbsp;
-                    <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} dangerouslySetInnerHTML={{ __html: formatText(chatThread.parsed) }} />
-                </p>
+                    <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} >
+                        {chatThread.parsed.map((value, k) => {
+                            let result;
+                            switch (value.type) {
+                                case "text":
+                                    result = parseUrls(value.text).map((v, k) => {
+                                        let text;
+                                        switch (v.type) {
+                                            case "link":
+                                                text = <a key={k} target='_blank' rel="noopener noreferrer" style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { color: "#efeff1", verticalAlign: "middle" }} href={v.url} >{v.text}</a>
+                                                break;
+
+                                            default:
+                                                text = v.text;
+                                                break;
+                                        }
+                                        return text;
+                                    });
+                                    break;
+
+                                case "emote":
+                                    result = <Tooltip
+                                        key={k}
+                                        theme="light"
+                                        position="top"
+                                        trigger="click"
+                                        html={(
+                                            <div><img src={preloadImage(`http://static-cdn.jtvnw.net/emoticons/v1/${value.id}/3.0`)} alt={value.name} /><p>{value.name}</p></div>
+                                        )}
+                                        animation="fade"
+                                        animateFill={false}
+                                        /*duration={0}*/
+                                    >
+                                        <div style={{ height: "1em", verticalAlign: "middle", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                                            <img className="emoticon" src={`https://static-cdn.jtvnw.net/emoticons/v1/${value.id}/1.0`} alt={value.name} />
+                                        </div>
+                                    </Tooltip>
+                                    break;
+
+                                default: break;
+                            }
+                            return result;
+                        })}
+                    </span>
+                </div>
             )}
-            <ReactTooltip id="emote" effect="solid" border={true} className="emote-preview" getContent={datumAsText => {
-                if (datumAsText == null) {
-                    return;
-                }
-                let v = JSON.parse(datumAsText);
-                return (
-                    <><img src={v.src} alt={v.title} /><p>{v.title}</p></>
-                );
-            }} />
             <ReactTooltip border={true} place="right" effect="solid" className="emote-preview tip" />
         </div>
     )
