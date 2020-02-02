@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { observer, useLocalStore } from 'mobx-react';
 import _ from 'lodash';
-import ReactTooltip from 'react-tooltip';
 import { Tooltip } from 'react-tippy';
 import chroma from 'chroma-js';
 import { parseUrls } from 'parse-msg';
@@ -70,9 +69,6 @@ function Chat() {
         autoScroll: true,
     }));
     useEffect(() => {
-        ReactTooltip.rebuild();
-    }, [mystore.chatThread]);
-    useEffect(() => {
         document.body.style.margin = "10px";
         document.body.style.background = "#18181b";
         document.body.style.color = "#efeff1";
@@ -110,10 +106,21 @@ function Chat() {
                         {chatThread.ts}
                     </small>
                     {chatThread.badgesUser && <span>{chatThread.badgesUser.map((badgeUser, k) =>
-                        <img style={{ verticalAlign: "middle", marginRight: 3 }}
-                            key={k} src={badgeUser && badgeUser.image_url_1x}
-                            alt=""
-                            data-tip={formatTipForBadge(badgeUser, chatThread)} />
+                        <Tooltip key={k}
+                            title={formatTipForBadge(badgeUser, chatThread)}
+                            theme="light"
+                            position="top-start"
+                            trigger="mouseenter"
+                            animation="fade"
+                            animateFill={false}
+                            duration={5}
+                            arrow={true}
+                            size="small"
+                        >
+                            <img style={{ verticalAlign: "middle", marginRight: 3 }}
+                                src={badgeUser && badgeUser.image_url_1x}
+                                alt="" />
+                        </Tooltip>
                     )}</span>}
                     <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName}</span>&nbsp;
                     <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} >
@@ -147,7 +154,8 @@ function Chat() {
                                         )}
                                         animation="fade"
                                         animateFill={false}
-                                        /*duration={0}*/
+                                        arrow={true}
+                                        distance={20}
                                     >
                                         <div style={{ height: "1em", verticalAlign: "middle", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
                                             <img className="emoticon" src={`https://static-cdn.jtvnw.net/emoticons/v1/${value.id}/1.0`} alt={value.name} />
@@ -162,7 +170,6 @@ function Chat() {
                     </span>
                 </div>
             )}
-            <ReactTooltip border={true} place="right" effect="solid" className="emote-preview tip" />
         </div>
     )
 }
