@@ -44,52 +44,9 @@ function useInterval(callback, delay) {
 
 function App() {
   const channels = [
-    'solary',
-    'zerator',
-    'lefrenchrestream',
-    'locklear',
-    'kamet0',
-    'xari',
-    'mistermv',
-    'squeezielive',
-    'alphacast',
-    'dahmien7',
-    'mrbboy45',
-    'mickalow',
-    'skyyart',
-    'moman',
-    'shaunz',
-    'antoinedaniellive',
-    'lapi',
-    'theguill84',
-    'gobgg',
-    'as2pik',
-    'etoiles',
     'peteur_pan',
     'mathox',
     'aypierre',
-    'aureliensama',
-    'nems',
-    'libe',
-    'wingobear',
-    'kennystream',
-    'sardoche',
-    'gotaga',
-    'loeya',
-    'ponce',
-    'domingo',
-    'fantabobshow',
-    'grabyourpopcorn',
-    'mldeg',
-    'fuzeiii',
-    'corobizar',
-    'lutti',
-    'ikatv',
-    'roi_louis',
-    'zedh74',
-    'siphano',
-    'edorocky',
-    'ilithpriscith'
   ];
 
   const generateLayout = () => {
@@ -214,6 +171,12 @@ function App() {
     })
 
     chatClient.onAction((channel, user, message, msg) => {
+      const ty = msg.params
+      Object.defineProperty(msg, 'params', {
+        get: () => {
+          return {...ty, message};
+        },
+      });
       let chat = {
         id: msg.tags.get('id'),
         status: "action",
@@ -223,7 +186,7 @@ function App() {
         displayName: msg.userInfo.displayName,
         ts: moment(msg.tags.get('tmi-sent-ts'), "x").format('LT'),
         ts_global: moment().valueOf(),
-        parsed: msg.parseEmotes(message),
+        parsed: msg.parseEmotes(),
         userInfo: { userName: user }
       };
       if (msg.userInfo.badges.size > 0) {
@@ -245,8 +208,8 @@ function App() {
   }
 
   const getInfoStreams = async () => {
-    const infos = await client.helix.streams.getStreamByUserNames(channels);
-    setInfoStreams(infos);
+    const infos = await client.helix.streams.getStreams({userName:channels});
+    setInfoStreams(infos.data);
   }
 
   useInterval(() => {
@@ -254,8 +217,7 @@ function App() {
   }, 20000)
 
   useEffect(() => {
-    getInfoStreams();
-    chatListener();
+    getInfoStreams().then(()=>chatListener());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
