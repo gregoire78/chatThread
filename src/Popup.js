@@ -25,6 +25,12 @@ const Popup = props => {
 
     useEffect(() => {
         externalWindow.current = PopupCenter(props.url, props.title, 600, 600);
+        externalWindow.current.addEventListener('load', ()=>{
+            externalWindow.current.postMessage({
+                source: "app",
+                props: JSON.parse(JSON.stringify(props))
+            }, "*");
+        })
         externalWindow.current.addEventListener("beforeunload", (event) => {
             props.closePopup();
         });
