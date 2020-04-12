@@ -45,6 +45,7 @@ function useInterval(callback, delay) {
 function App() {
   const channels = [
     'peteur_pan',
+    'zerator',
     'mathox',
     'aypierre',
   ];

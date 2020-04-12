@@ -122,7 +122,7 @@ function Chat() {
                                 alt="" />
                         </Tooltip>
                     )}</span>}
-                    <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName}</span>&nbsp;
+                    <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName} : </span>
                     <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} >
                         {chatThread.parsed.map((value, k) => {
                             let result;
