@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { HashRouter as Router, Route, Switch } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import './index.css';
 import App from './App';
 import Chat from './Chat';
@@ -11,8 +11,8 @@ ReactDOM.render(
     <StoreProvider>
         <Router basename="/">
             <Switch>
-                <Route path="/" exact component={App} />
-                <Route path="/chat/:channel" component={Chat} />
+                <Route path="/chat/:channel?" component={Chat} />
+                <Route path="/:channels?" exact component={App} />
             </Switch>
         </Router>
     </StoreProvider>,

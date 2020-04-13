@@ -42,9 +42,10 @@ const Popup = props => {
     }, []);
 
     useEffect(() => {
+        const p = props.chatThreadChannel.slice(-1).pop()
         externalWindow.current.postMessage({
-            source: "app",
-            props: JSON.parse(JSON.stringify(props))
+            source: "app-single",
+            props: JSON.parse(JSON.stringify({...props, chatThreadChannel: p}))
         }, "*");
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.chatThreadChannel])

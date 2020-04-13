@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { observer, useLocalStore } from 'mobx-react';
 import _ from 'lodash';
 import { Tooltip } from 'react-tippy';
 import chroma from 'chroma-js';
 import { parseUrls } from 'parse-msg';
+import axios from "axios";
 
 const defaultColors = _.shuffle([
     "#FF0000",
@@ -27,15 +28,15 @@ function formatTipForBadge(badgeUser, chatThread) {
     let text = "";
     switch (badgeUser.id) {
         case "subscriber":
-            text = `Abonné depuis ${chatThread.badgeInfo.subscriber} mois`
+            text = <b>Abonné depuis {chatThread.badgeInfo.subscriber} mois</b>
             break;
 
         case "founder":
-            text = `Fondateur, abonné depuis ${chatThread.badgeInfo.founder} mois`
+            text = <b>Fondateur, abonné depuis {chatThread.badgeInfo.founder} mois</b>
             break;
 
         default:
-            text = badgeUser.title
+            text = <b>{badgeUser.title}</b>
             break;
     }
     return text;
@@ -67,21 +68,82 @@ function Chat() {
     const mystore = useLocalStore(() => ({
         chatThread: [],
         autoScroll: true,
+        audio: [],
+        activeAudio: false,
     }));
+    const player = useRef(new Audio())
+
+    const getTts = async (text) => {
+        return await (await axios.post(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${process.env.REACT_APP_TTS}`, {
+            input: {
+                ssml: '<speak>' + text + '</speak>'
+            },
+            voice: {
+                languageCode: "fr-FR",
+                name:'fr-FR-Wavenet-A',
+                ssmlGender: "FEMALE"
+            },
+            audioConfig: {
+                audioEncoding: "OGG_OPUS",
+                speakingRate: "1"
+            }
+        })).data
+    }
+
+    let interval
+    const playsound = async (init = false) => {
+        if (init) startTcl();
+        if (mystore.audio.length > 0 && player.current.paused) {
+            clearInterval(interval)
+            const message = mystore.chatThread[mystore.audio.shift()-1].message
+            const tts = await getTts(`${message}`.replace(/_/g, ' '));
+            player.current.src = 'data:audio/mpeg;base64,'+tts.audioContent
+            player.current.play().then(_ => {
+                //console.log("audio played auto");
+            })
+            .catch(error => {
+                console.log(error, tts, message);
+                if (mystore.audio.length > 0) {
+                    playsound();
+                } else {
+                    startTcl();
+                }
+            });
+            player.current.onended = () => {
+                if (mystore.audio.length > 0) {
+                    playsound();
+                } else {
+                    startTcl();
+                }
+            }
+        }
+    }
+    const startTcl = () => interval = setInterval(() => playsound(), 100);
+
     useEffect(() => {
+        player.current.volume = 0.4;
         document.body.style.margin = "10px";
         document.body.style.background = "#18181b";
         document.body.style.color = "#efeff1";
         window.scrollTo(0, document.body.scrollHeight);
-        window.addEventListener("message", (e) => {
+        window.addEventListener("message", async (e) => {
             if (e.data.source === "app" && e.data.props) {
                 document.title = e.data.props.title;
                 mystore.chatThread = e.data.props.chatThreadChannel
+                if(mystore.activeAudio) startTcl()
+            }
+            if(e.data.source === "app-single" && e.data.props) {
+                const p = mystore.chatThread.push(e.data.props.chatThreadChannel)
+                if(!["moobot","nightbot", "ayrob0t"].includes(e.data.props.chatThreadChannel.userName)){
+                    //const tts = await getTts(`${}`.replace(/_/g, ' '));
+                    if(mystore.activeAudio) mystore.audio = [...mystore.audio, p]
+                }
             }
             if (mystore.autoScroll) {
                 window.scrollTo(0, document.body.scrollHeight);
             }
         }, false);
+        window.opener.onbeforeunload = () => window.close()
         const scroll = (e) => {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
                 mystore.autoScroll = true;
@@ -98,79 +160,92 @@ function Chat() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
+    const handleChange = (e) => {
+        mystore.activeAudio = e.target.checked
+        if(e.target.checked) {
+            startTcl()
+        } else {
+            mystore.audio = []
+            clearInterval(interval)
+        }
+    }
+
     return (
-        <div className="chat-thread" style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif" }}>
-            {mystore.chatThread.length > 0 && mystore.chatThread.map((chatThread) =>
-                <div key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", lineHeight: "1.5em" }}>
-                    <small style={{ color: "grey", verticalAlign: "middle", marginRight: 5 }}>
-                        {chatThread.ts}
-                    </small>
-                    {chatThread.badgesUser && <span>{chatThread.badgesUser.map((badgeUser, k) =>
-                        <Tooltip key={k}
-                            title={formatTipForBadge(badgeUser, chatThread)}
-                            theme="light"
-                            position="top-start"
-                            trigger="mouseenter"
-                            animation="fade"
-                            animateFill={false}
-                            duration={5}
-                            arrow={true}
-                            size="small"
-                        >
-                            <img style={{ verticalAlign: "middle", marginRight: 3 }}
-                                src={badgeUser && badgeUser.image_url_1x}
-                                alt="" />
-                        </Tooltip>
-                    )}</span>}
-                    <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName} : </span>
-                    <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} >
-                        {chatThread.parsed.map((value, k) => {
-                            let result;
-                            switch (value.type) {
-                                case "text":
-                                    result = parseUrls(value.text).map((v, k) => {
-                                        let text;
-                                        switch (v.type) {
-                                            case "link":
-                                                text = <a key={k} target='_blank' rel="noopener noreferrer" style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { color: "#efeff1", verticalAlign: "middle" }} href={v.url} >{v.text}</a>
-                                                break;
+        <>
+            <input style={{position: 'fixed', padding: 0, margin: 0, top: 0, left: 0}} type="checkbox" onChange={handleChange} />
+            <div className="chat-thread" style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif" }}>
+                {mystore.chatThread.length > 0 && mystore.chatThread.map((chatThread) =>
+                    <div key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", lineHeight: "1.5em" }}>
+                        <small style={{ color: "grey", verticalAlign: "middle", marginRight: 5 }}>
+                            {chatThread.ts}
+                        </small>
+                        {chatThread.badgesUser && <span>{chatThread.badgesUser.map((badgeUser, k) =>
+                            <Tooltip key={k}
+                                html={formatTipForBadge(badgeUser, chatThread)}
+                                theme="light"
+                                position="top-start"
+                                trigger="mouseenter"
+                                animation="fade"
+                                animateFill={false}
+                                duration={5}
+                                arrow={true}
+                                size="small"
+                            >
+                                <img style={{ verticalAlign: "middle", marginRight: 3 }}
+                                    src={badgeUser && badgeUser.image_url_1x}
+                                    alt="" />
+                            </Tooltip>
+                        )}</span>}
+                        <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName} : </span>
+                        <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} >
+                            {chatThread.parsed.map((value, k) => {
+                                let result;
+                                switch (value.type) {
+                                    case "text":
+                                        result = parseUrls(value.text).map((v, k) => {
+                                            let text;
+                                            switch (v.type) {
+                                                case "link":
+                                                    text = <a key={k} target='_blank' rel="noopener noreferrer" style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { color: "#efeff1", verticalAlign: "middle" }} href={v.url} >{v.text}</a>
+                                                    break;
 
-                                            default:
-                                                text = v.text;
-                                                break;
-                                        }
-                                        return text;
-                                    });
-                                    break;
+                                                default:
+                                                    text = v.text;
+                                                    break;
+                                            }
+                                            return text;
+                                        });
+                                        break;
 
-                                case "emote":
-                                    result = <Tooltip
-                                        key={k}
-                                        theme="light"
-                                        position="top"
-                                        trigger="click"
-                                        html={(
-                                            <div><img src={preloadImage(`http://static-cdn.jtvnw.net/emoticons/v1/${value.id}/3.0`)} alt={value.name} /><p>{value.name}</p></div>
-                                        )}
-                                        animation="fade"
-                                        animateFill={false}
-                                        arrow={true}
-                                        distance={20}
-                                    >
-                                        <div style={{ height: "1em", verticalAlign: "middle", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-                                            <img className="emoticon" src={`https://static-cdn.jtvnw.net/emoticons/v1/${value.id}/1.0`} alt={value.name} />
-                                        </div>
-                                    </Tooltip>
-                                    break;
+                                    case "emote":
+                                        result = <Tooltip
+                                            key={k}
+                                            theme="light"
+                                            position="top"
+                                            trigger="click"
+                                            html={(
+                                                <div><img src={preloadImage(`http://static-cdn.jtvnw.net/emoticons/v1/${value.id}/3.0`)} alt={value.name} /><p>{value.name}</p></div>
+                                            )}
+                                            animation="fade"
+                                            animateFill={false}
+                                            arrow={true}
+                                            distance={20}
+                                        >
+                                            <div style={{ height: "1em", verticalAlign: "middle", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                                                <img className="emoticon" src={`https://static-cdn.jtvnw.net/emoticons/v1/${value.id}/1.0`} alt={value.name} />
+                                            </div>
+                                        </Tooltip>
+                                        break;
 
-                                default: break;
-                            }
-                            return result;
-                        })}
-                    </span>
-                </div>
-            )}
-        </div>
+                                    default: break;
+                                }
+                                return result;
+                            })}
+                        </span>
+                    </div>
+                )}
+            </div>
+        </>
     )
 }
 

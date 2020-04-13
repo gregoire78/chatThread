@@ -6,6 +6,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import 'moment/locale/fr';
 import uuid from 'uuid/v4';
+import { useParams } from "react-router-dom"
 //import axios from 'axios';
 import { WidthProvider, Responsive } from "react-grid-layout";
 
@@ -43,11 +44,10 @@ function useInterval(callback, delay) {
 }
 
 function App() {
+  let { channels: channelsRoute } = useParams()
   const channels = [
     'peteur_pan',
-    'zerator',
-    'mathox',
-    'aypierre',
+    ..._.uniqBy(_.compact(channelsRoute ? channelsRoute.toLowerCase().split("+") : [])),
   ];
 
   const generateLayout = () => {
@@ -117,7 +117,7 @@ function App() {
           const duration = msg.tags.get('ban-duration');
           const { params: { channel, user }, tags } = msg;
           const messages = store.chatThreads.get(channel).filter((chatThread) => user === chatThread.userName);
-          const ts = moment(tags.get('tmi-sent-ts'), "x").format('LT');
+          const ts = moment(tags.get('tmi-sent-ts'), "x").format('LTS');
           let ban;
           if (duration) {
             ban = { id: uuid(), status: "timeout", userName: user, channel, duration, ts, ts_global: moment().valueOf(), messages, color: 'darkorange' };
@@ -142,7 +142,7 @@ function App() {
         channel,
         userName: user,
         displayName: msg.userInfo.displayName,
-        ts: moment(msg.tags.get('tmi-sent-ts'), "x").format('LT'),
+        ts: moment(msg.tags.get('tmi-sent-ts'), "x").format('LTS'),
         ts_global: moment().valueOf(),
         parsed: msg.parseEmotes(),
         userInfo: { userName: user }
