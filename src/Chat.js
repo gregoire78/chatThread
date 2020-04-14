@@ -96,18 +96,10 @@ function Chat() {
         if (init) startTcl();
         if (mystore.audio.length > 0 && player.current.paused) {
             clearInterval(interval)
-            const message = mystore.audio.shift()
+            const message = _.find(mystore.chatThread, { 'id': mystore.audio.shift()}).message;
             const tts = await getTts(`${message}`.replace(/_/g, ' '));
             player.current.src = 'data:audio/mpeg;base64,'+tts.audioContent
-            player.current.play().then(_ => {
-                player.current.onended = () => {
-                    if (mystore.audio.length > 0) {
-                        playsound();
-                    } else {
-                        startTcl();
-                    }
-                }
-            })
+            player.current.play().then(_ => {})
             .catch(error => {
                 console.log(error, tts, message);
                 if (mystore.audio.length > 0) {
@@ -123,6 +115,13 @@ function Chat() {
     useEffect(() => {
         if(mystore.activeAudio) startTcl()
         player.current.volume = 0.4;
+        player.current.onended = () => {
+            if (mystore.audio.length > 0) {
+                playsound();
+            } else {
+                startTcl();
+            }
+        }
         document.body.style.margin = "10px";
         document.body.style.background = "#18181b";
         document.body.style.color = "#efeff1";
@@ -137,7 +136,7 @@ function Chat() {
                 mystore.chatThread = [...mystore.chatThread.slice(-100), e.data.props.chatThreadChannel]
                 if(!["moobot","nightbot", "ayrob0t"].includes(e.data.props.chatThreadChannel.userName)){
                     //const tts = await getTts(`${}`.replace(/_/g, ' '));
-                    if(mystore.activeAudio) mystore.audio = [...mystore.audio, e.data.props.chatThreadChannel.message]
+                    if(mystore.activeAudio) mystore.audio = [...mystore.audio, e.data.props.chatThreadChannel.id]
                 }
             }
             if (mystore.autoScroll) {
