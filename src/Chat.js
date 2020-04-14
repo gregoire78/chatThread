@@ -70,6 +70,7 @@ function Chat() {
         autoScroll: true,
         audio: [],
         activeAudio: false,
+        title: ''
     }));
     const player = useRef(new Audio())
 
@@ -95,11 +96,17 @@ function Chat() {
         if (init) startTcl();
         if (mystore.audio.length > 0 && player.current.paused) {
             clearInterval(interval)
-            const message = mystore.chatThread[mystore.audio.shift()-1].message
+            const message = mystore.audio.shift()
             const tts = await getTts(`${message}`.replace(/_/g, ' '));
             player.current.src = 'data:audio/mpeg;base64,'+tts.audioContent
             player.current.play().then(_ => {
-                //console.log("audio played auto");
+                player.current.onended = () => {
+                    if (mystore.audio.length > 0) {
+                        playsound();
+                    } else {
+                        startTcl();
+                    }
+                }
             })
             .catch(error => {
                 console.log(error, tts, message);
@@ -109,18 +116,12 @@ function Chat() {
                     startTcl();
                 }
             });
-            player.current.onended = () => {
-                if (mystore.audio.length > 0) {
-                    playsound();
-                } else {
-                    startTcl();
-                }
-            }
         }
     }
     const startTcl = () => interval = setInterval(() => playsound(), 100);
 
     useEffect(() => {
+        if(mystore.activeAudio) startTcl()
         player.current.volume = 0.4;
         document.body.style.margin = "10px";
         document.body.style.background = "#18181b";
@@ -128,15 +129,15 @@ function Chat() {
         window.scrollTo(0, document.body.scrollHeight);
         window.addEventListener("message", async (e) => {
             if (e.data.source === "app" && e.data.props) {
-                document.title = e.data.props.title;
+                mystore.title = e.data.props.title
+                document.title = e.data.props.title
                 mystore.chatThread = e.data.props.chatThreadChannel
-                if(mystore.activeAudio) startTcl()
             }
             if(e.data.source === "app-single" && e.data.props) {
-                const p = mystore.chatThread.push(e.data.props.chatThreadChannel)
+                mystore.chatThread = [...mystore.chatThread.slice(-100), e.data.props.chatThreadChannel]
                 if(!["moobot","nightbot", "ayrob0t"].includes(e.data.props.chatThreadChannel.userName)){
                     //const tts = await getTts(`${}`.replace(/_/g, ' '));
-                    if(mystore.activeAudio) mystore.audio = [...mystore.audio, p]
+                    if(mystore.activeAudio) mystore.audio = [...mystore.audio, e.data.props.chatThreadChannel.message]
                 }
             }
             if (mystore.autoScroll) {
@@ -172,8 +173,8 @@ function Chat() {
 
     return (
         <>
-            <input style={{position: 'fixed', padding: 0, margin: 0, top: 0, left: 0}} type="checkbox" onChange={handleChange} />
-            <div className="chat-thread" style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif" }}>
+            <div style={{position: 'fixed', top: 0, left: 0, background: '#18181b', width: '100%', textAlign: 'center'}}><input style={{position: 'absolute', left: 0}} type="checkbox" onChange={handleChange} checked={mystore.activeAudio} /> <span>{mystore.title}</span></div>
+            <div className="chat-thread" style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif", marginTop: 25 }}>
                 {mystore.chatThread.length > 0 && mystore.chatThread.map((chatThread) =>
                     <div key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", lineHeight: "1.5em" }}>
                         <small style={{ color: "grey", verticalAlign: "middle", marginRight: 5 }}>
