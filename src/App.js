@@ -13,7 +13,6 @@ import { WidthProvider, Responsive } from "react-grid-layout";
 import Panel from './Panel';
 import { useStore } from './store';
 
-import 'react-tippy/dist/tippy.css';
 import '../node_modules/react-grid-layout/css/styles.css';
 import '../node_modules/react-resizable/css/styles.css';
 import './App.css';
@@ -46,7 +45,7 @@ function useInterval(callback, delay) {
 function App() {
   let { channels: channelsRoute } = useParams()
   const channels = [
-    'peteur_pan',
+    'mathox',
     ..._.uniqBy(_.compact(channelsRoute ? channelsRoute.toLowerCase().split("+") : [])),
   ];
 
@@ -175,7 +174,7 @@ function App() {
       const ty = msg.params
       Object.defineProperty(msg, 'params', {
         get: () => {
-          return {...ty, message};
+          return { ...ty, message };
         },
       });
       let chat = {
@@ -209,7 +208,7 @@ function App() {
   }
 
   const getInfoStreams = async () => {
-    const infos = await client.helix.streams.getStreams({userName:channels});
+    const infos = await client.helix.streams.getStreams({ userName: channels });
     setInfoStreams(infos.data);
   }
 
@@ -218,7 +217,7 @@ function App() {
   }, 20000)
 
   useEffect(() => {
-    getInfoStreams().then(()=>chatListener());
+    getInfoStreams().then(() => chatListener());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
