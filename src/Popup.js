@@ -1,6 +1,7 @@
 import {
     useEffect,
-    useRef
+    useRef,
+    useState,
 } from "react";
 
 function PopupCenter(url, title, w, h) {
@@ -22,16 +23,22 @@ function PopupCenter(url, title, w, h) {
 
 const Popup = props => {
     const externalWindow = useRef();
+    const [load, setLoad] = useState(false);
 
     useEffect(() => {
         externalWindow.current = PopupCenter(props.url, props.title, 600, 600);
-        externalWindow.current.addEventListener('load', ()=>{
+        externalWindow.current.addEventListener('load', () => {
+            setLoad(true)
             externalWindow.current.postMessage({
                 source: "app",
-                props: JSON.parse(JSON.stringify(props))
+                props: JSON.parse(JSON.stringify({
+                    ...props,
+                    chatThreadChannel: props.chatThreadChannel.slice(-100)
+                }))
             }, "*");
         })
         externalWindow.current.addEventListener("beforeunload", (event) => {
+            setLoad(false)
             props.closePopup();
         });
         return function cleanup() {
@@ -42,11 +49,16 @@ const Popup = props => {
     }, []);
 
     useEffect(() => {
-        const p = props.chatThreadChannel.slice(-1).pop()
-        externalWindow.current.postMessage({
-            source: "app-single",
-            props: JSON.parse(JSON.stringify({...props, chatThreadChannel: p}))
-        }, "*");
+        if (load) {
+            const p = props.chatThreadChannel.slice(-1).pop()
+            externalWindow.current.postMessage({
+                source: "app-single",
+                props: JSON.parse(JSON.stringify({
+                    ...props,
+                    chatThreadChannel: p
+                }))
+            }, "*");
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.chatThreadChannel])
 
