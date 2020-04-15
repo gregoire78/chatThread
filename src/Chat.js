@@ -219,7 +219,7 @@ function Chat() {
                                     case "emote":
                                         result = <Tippy
                                             key={k}
-                                            content={<div style={{ textAlign: 'center' }}><img src={preloadImage(`http://static-cdn.jtvnw.net/emoticons/v1/${value.id}/3.0`)} alt={value.name} /><p>{value.name}</p></div>}
+                                            content={<div style={{ textAlign: 'center' }}><img src={preloadImage(`https://static-cdn.jtvnw.net/emoticons/v1/${value.id}/3.0`)} alt={value.name} /><p>{value.name}</p></div>}
                                             theme="light"
                                             placement="top"
                                             trigger="click"

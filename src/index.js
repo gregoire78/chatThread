@@ -12,7 +12,7 @@ ReactDOM.render(
         <Router basename="/">
             <Switch>
                 <Route path="/chat/:channel?" component={Chat} />
-                <Route path="/:channels?" exact component={App} />
+                <Route path="/:channels?" component={App} />
             </Switch>
         </Router>
     </StoreProvider>,
