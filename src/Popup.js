@@ -33,7 +33,7 @@ const Popup = props => {
                 source: "app",
                 props: JSON.parse(JSON.stringify({
                     ...props,
-                    chatThreadChannel: props.chatThreadChannel.slice(-100)
+                    chatThreadChannel: props.chatThreadChannel.slice(-150)
                 }))
             }, "*");
         })

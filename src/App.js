@@ -52,7 +52,7 @@ function App() {
   const generateLayout = () => {
     return _.map(channels, (item, i) => {
       const w = 3;
-      const h = 1;
+      const h = 2;
       return {
         x: Math.floor((i * 12 / 4) % 12),
         y: Infinity,
@@ -163,7 +163,7 @@ function App() {
 
     chatClient.onMessageRemove((channel, messageId, msg) => {
       const { tags, userName } = msg;
-      const ts = moment(tags.get('tmi-sent-ts'), "x").format('LT');
+      const ts = moment(tags.get('tmi-sent-ts'), "x").format('LTS');
       let chat = store.chatThreads.get(channel).find((message) => message.id && messageId === message.id);
       let messageDeleted = { id: uuid(), status: "messagedeleted", userName, channel, ts, ts_global: moment().valueOf(), messages: [chat], msg, color: 'blue' };
       //console.log("%cmessagedeleted", 'color: blue', channel, userName, messageDeleted);
@@ -232,6 +232,7 @@ function App() {
         {<ResponsiveGridLayout
           className="layout"
           cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+          rowHeight={100}
           measureBeforeMount={false}
           useCSSTransforms={true}
           layouts={layouts}
@@ -244,6 +245,7 @@ function App() {
           //onDragStart={(layout, oldItem, newItem, placeholder, e, element) => { e.target.style.cursor = "grabbing"; }}
           onDrag={(layout, oldItem, newItem, placeholder, e, element) => { element.getElementsByClassName('title')[0].style.cursor = "grabbing" }}
           onDragStop={(layout, oldItem, newItem, placeholder, e, element) => { element.getElementsByClassName('title')[0].style.cursor = "grab"; }}
+          margin={[5, 5]}
         >
           {layouts.lg.map((l) => {
             const channel = l.i;

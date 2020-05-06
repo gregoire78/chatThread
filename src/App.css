@@ -120,3 +120,10 @@ li {
 .tippy-tooltip [x-circle] {
   border-radius: 0%;
 }
+
+.label-filter {
+  display: inline-flex;
+  user-select: none;
+  cursor: pointer;
+  /*vertical-align: top;*/
+}
