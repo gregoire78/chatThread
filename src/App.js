@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react';
-import ChatClient from 'twitch-chat-client';
-import TwitchClient from 'twitch';
+import ChatClient from 'twitch-chat-client/lib';
+import TwitchClient from 'twitch/lib';
 import _ from 'lodash';
 import moment from 'moment';
 import 'moment/locale/fr';
@@ -66,6 +66,7 @@ function App() {
   const [infoStreams, setInfoStreams] = useState([]);
   const [infoChannels, setInfoChannels] = useState([]);
   const [badgesChannels, setBadgesChannels] = useState(new Map());
+  const [bits, setBits] = useState(new Map());
   const badgesChannelsRef = useRef(badgesChannels);
   const scrollBarRefs = useRef(new Map());
   const [layouts, setLayouts] = useState({ ...getFromLS("layouts"), ...{ lg: _.uniqBy([...getFromLS("layouts") ? getFromLS("layouts").lg.filter((i) => channels.includes(i.i)) : [], ...generateLayout()], 'i') } });
@@ -85,9 +86,11 @@ function App() {
     const channelsData = await client.helix.users.getUsersByNames(channels);
     setInfoChannels(channelsData);
 
-    const badgesGlobal = await (await client.badges.getGlobalBadges('fr'))._data;
+    const badgesGlobal = await (await client.badges.getGlobalBadges())._data;
     Promise.all(channelsData.map(async (channel) => {
-      const badges = await (await client.badges.getChannelBadges(channel, false, 'fr'))._data;
+      const badges = await (await client.badges.getChannelBadges(channel, false))._data;
+      const bitsou = await client.kraken.bits.getCheermotes(channel)
+      setBits(new Map(bits.set("#" + channel.name, bitsou)))
       setBadgesChannels((p) => {
         return badgesChannelsRef.current = new Map(p).set("#" + channel.name, _.merge({}, badgesGlobal, badges))
       });
@@ -112,6 +115,7 @@ function App() {
           break;
 
         case "CLEARCHAT":
+          //console.log(msg)
           //const user = await client.helix.users.getUserById(msg.tags.get('target-user-id'));
           const duration = msg.tags.get('ban-duration');
           const { params: { channel, user }, tags } = msg;
@@ -133,7 +137,7 @@ function App() {
       }
     })
 
-    chatClient.onPrivmsg((channel, user, message, msg) => {
+    chatClient.onPrivmsg(async (channel, user, message, msg) => {
       let chat = {
         id: msg.tags.get('id'),
         status: "message",
@@ -143,21 +147,33 @@ function App() {
         displayName: msg.userInfo.displayName,
         ts: moment(msg.tags.get('tmi-sent-ts'), "x").format('LTS'),
         ts_global: moment().valueOf(),
-        parsed: msg.parseEmotes(),
-        userInfo: { userName: user }
+        parsed: msg.isCheer ? msg.parseEmotesAndBits(bits.get(channel)) : msg.parseEmotes(),
+        userInfo: { userName: user },
+        isCheer: msg.isCheer,
       };
-      if (msg.userInfo.badges.size > 0) {
+      /*const userr = await client.helix.users.getUserByName(user);
+      console.log(await userr.getFollowTo(msg.channelId))*/
+      if (msg.isCheer) {
+        //console.log(channel, msg.totalBits, msg.parseEmotesAndBits(bits.get(channel)))
+        chat.totalBits = msg.totalBits
+      }
+      if (msg.userInfo.badges.size > 0 && badgesChannelsRef.current.has(channel)) {
         chat.badgesUser = [];
-        msg.userInfo.badges.forEach((v, k) => { chat.badgesUser = [...chat.badgesUser, { ...badgesChannelsRef.current.get(channel)[k].versions[v], id: k }] });
+        msg.userInfo.badges.forEach((v, k) => { chat.badgesUser = [...chat.badgesUser, { ...badgesChannelsRef.current.get(channel)[k].versions[v], id: k, value: v }] });
       }
       if (msg.userInfo.color) {
         chat.userInfo = { color: msg.userInfo.color, userName: user }
       }
-      if (msg.tags.get('badge-info')) {
+      /*if (msg.tags.get('badge-info')) {
         const badgesInfos = msg.tags.get('badge-info');
         const parsedInfos = badgesInfos.split('/');
         chat.badgeInfo = new Map().set(parsedInfos[0], parsedInfos[1]);
+      }*/
+      if (msg.userInfo.badgeInfo.size > 0) {
+        chat.badgeInfo = msg.userInfo.badgeInfo
+        //console.log(msg.userInfo)
       }
+      //console.log(msg)
       store.setChatThread(channel, chat);
     })
 
@@ -184,14 +200,14 @@ function App() {
         channel,
         userName: user,
         displayName: msg.userInfo.displayName,
-        ts: moment(msg.tags.get('tmi-sent-ts'), "x").format('LT'),
+        ts: moment(msg.tags.get('tmi-sent-ts'), "x").format('LTS'),
         ts_global: moment().valueOf(),
         parsed: msg.parseEmotes(),
         userInfo: { userName: user }
       };
-      if (msg.userInfo.badges.size > 0) {
+      if (msg.userInfo.badges.size > 0 && badgesChannelsRef.current.has(channel)) {
         chat.badgesUser = [];
-        msg.userInfo.badges.forEach((v, k) => { chat.badgesUser = [...chat.badgesUser, { ...badgesChannelsRef.current.get(channel)[k].versions[v], id: k }] });
+        msg.userInfo.badges.forEach((v, k) => { chat.badgesUser = [...chat.badgesUser, { ...badgesChannelsRef.current.get(channel)[k].versions[v], id: k, value: v }] });
       }
       if (msg.userInfo.color) {
         chat.userInfo = { color: msg.userInfo.color, userName: user }

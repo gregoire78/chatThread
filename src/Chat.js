@@ -6,7 +6,7 @@ import { followCursor } from 'tippy.js/headless'
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
 import chroma from 'chroma-js';
-import { parseUrls } from 'parse-msg';
+import { parseUrls, urlRegex } from 'parse-msg';
 import axios from "axios";
 
 const defaultColors = _.shuffle([
@@ -31,11 +31,13 @@ function formatTipForBadge(badgeUser, chatThread) {
     let text = "";
     switch (badgeUser.id) {
         case "subscriber":
-            text = <b>Abonné depuis {chatThread.badgeInfo.subscriber} mois</b>
+            const badgeType = badgeUser.value > 0 ? badgeUser.value >= 2000 ? badgeUser.value >= 3000 ? badgeUser.value - 3000 : badgeUser.value - 2000 : badgeUser.value : 0
+            const levelBadge = badgeType > 0 ? `des ${badgeType} mois` : 'basique'
+            text = <b>Abonné(e) depuis {chatThread.badgeInfo.subscriber} mois <small>(badge {levelBadge} {badgeUser.value >= 2000 ? badgeUser.value >= 3000 ? `de niveau 3` : `de niveau 2` : ""})</small></b>
             break;
 
         case "founder":
-            text = <b>Fondateur, abonné depuis {chatThread.badgeInfo.founder} mois</b>
+            text = <b>Fondateur, abonné(e) depuis {chatThread.badgeInfo.founder} mois</b>
             break;
 
         default:
@@ -77,7 +79,7 @@ function Chat() {
     }));
     const player = useRef(new Audio())
 
-    const getTts = async (text) => {
+    const getTts = async (text, rate) => {
         return await (await axios.post(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${process.env.REACT_APP_TTS}`, {
             input: {
                 ssml: '<speak>' + text + '</speak>'
@@ -89,7 +91,7 @@ function Chat() {
             },
             audioConfig: {
                 audioEncoding: "OGG_OPUS",
-                speakingRate: "1"
+                speakingRate: rate ? rate + "" : "1"
             }
         })).data
     }
@@ -100,7 +102,8 @@ function Chat() {
         if (mystore.audio.length > 0 && player.current.paused) {
             clearInterval(interval)
             const message = mystore.audio.shift() //_.find(mystore.chatThread, { 'id': mystore.audio.shift() });
-            const tts = await getTts(`${message.message.replace(/merde/g, '<say-as interpret-as="expletive">merde</say-as>')}`.replace(/_/g, ' '));
+            const rate = mystore.audio.length >= 5 ? mystore.audio.length >= 10 ? 3 : 2 : 1
+            const tts = await getTts(`${message.join(' ').replace(urlRegex({ strict: true }), ' un lien ').replace(/merde/g, '<say-as interpret-as="expletive">merde</say-as>').replace('@', '')}`.replace(/_/g, ' '), rate);
             player.current.src = 'data:audio/mpeg;base64,' + tts.audioContent
             player.current.play().then(_ => { })
                 .catch(error => {
@@ -136,10 +139,26 @@ function Chat() {
                 mystore.chatThread = e.data.props.chatThreadChannel
             }
             if (e.data.source === "app-single" && e.data.props) {
-                mystore.chatThread = [...mystore.chatThread.slice(-100), e.data.props.chatThreadChannel]
-                if (!["moobot", "nightbot", "ayrob0t"].includes(e.data.props.chatThreadChannel.userName)) {
+                mystore.chatThread = [...mystore.chatThread.slice(-150), e.data.props.chatThreadChannel]
+                const text = e.data.props.chatThreadChannel.parsed.map(v => v.type === 'text' ? v.text !== " " ? v.text : null : null).filter(Boolean)
+                if (!["moobot", "nightbot", "ayrob0t", "robochiotte"].includes(e.data.props.chatThreadChannel.userName) && text.length > 0) {
                     //const tts = await getTts(`${}`.replace(/_/g, ' '));
-                    if (mystore.activeAudio) mystore.audio = [...mystore.audio, e.data.props.chatThreadChannel]
+                    if (mystore.activeAudio) mystore.audio = [...mystore.audio, text]
+                }
+
+                if (e.data.props.chatThreadChannel.isCheer) {
+                    const anvil = new Audio()
+                    const messageAudio = new Audio()
+                    const tts = await getTts(`Alerte : ${e.data.props.chatThreadChannel.userName} donne ${e.data.props.chatThreadChannel.totalBits} bits à ${e.data.props.title} !`, 0.8);
+                    messageAudio.src = 'data:audio/mpeg;base64,' + tts.audioContent
+                    messageAudio.volume = 0.8
+
+                    if (e.data.props.chatThreadChannel.totalBits >= 1000)
+                        anvil.src = "./sounds/levelup.ogg"
+                    else
+                        anvil.src = "./sounds/anvil.ogg"
+                    anvil.volume = 0.1
+                    anvil.play().then(() => messageAudio.play())
                 }
             }
             if (mystore.autoScroll) {
@@ -177,8 +196,9 @@ function Chat() {
         <>
             <div style={{ position: 'fixed', top: 0, left: 0, background: '#18181b', width: '100%', textAlign: 'center' }}><input style={{ position: 'absolute', left: 0 }} type="checkbox" onChange={handleChange} checked={mystore.activeAudio} /> <span>{mystore.title}</span></div>
             <div className="chat-thread" style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif", marginTop: 25 }}>
-                {mystore.chatThread.length > 0 && mystore.chatThread.map((chatThread) =>
-                    <div key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", lineHeight: "1.5em" }}>
+                {mystore.chatThread.length > 0 && mystore.chatThread.map((chatThread) => {
+                    const containsJapanese = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(chatThread.displayName)
+                    return <div key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", lineHeight: "1.5em" }}>
                         <small style={{ color: "grey", verticalAlign: "middle", marginRight: 5 }}>
                             {chatThread.ts}
                         </small>
@@ -195,7 +215,7 @@ function Chat() {
                                     alt="" />
                             </Tippy>
                         )}</span>}
-                        <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName} : </span>
+                        <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName}{containsJapanese && <small> ({chatThread.userName})</small>}: </span>
                         <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} >
                             {chatThread.parsed.map((value, k) => {
                                 let result;
@@ -233,13 +253,19 @@ function Chat() {
                                         </Tippy>
                                         break;
 
+                                    case "cheer":
+                                        result = <><div key={k} style={{ height: "1em", verticalAlign: "middle", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                                            <img className="emoticon" src={value.displayInfo.url} alt={value.name} />
+                                        </div> <span style={{ color: value.displayInfo.color }}>{value.amount}</span></>
+                                        break;
+
                                     default: break;
                                 }
                                 return result;
                             })}
                         </span>
                     </div>
-                )}
+                })}
             </div>
         </>
     )
