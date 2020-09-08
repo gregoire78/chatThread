@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react';
-import ChatClient from 'twitch-chat-client/lib';
-import TwitchClient from 'twitch/lib';
+import { ChatClient } from 'twitch-chat-client/lib';
+import { ApiClient } from 'twitch/lib';
+import { ClientCredentialsAuthProvider } from 'twitch-auth';
 import _ from 'lodash';
 import moment from 'moment';
 import 'moment/locale/fr';
@@ -20,7 +21,8 @@ import './App.css';
 moment.locale('fr');
 const ResponsiveGridLayout = WidthProvider(Responsive);
 //const originalLayout = getFromLS("layouts") || {};
-const client = TwitchClient.withClientCredentials(process.env.REACT_APP_TWITCH_CLIENTID, process.env.REACT_APP_TWITCH_CLIENTSECRET);
+const authProvider = new ClientCredentialsAuthProvider(process.env.REACT_APP_TWITCH_CLIENTID, process.env.REACT_APP_TWITCH_CLIENTSECRET);
+const client = new ApiClient({ authProvider });
 
 function useInterval(callback, delay) {
   const savedCallback = useRef();
@@ -86,9 +88,9 @@ function App() {
     const channelsData = await client.helix.users.getUsersByNames(channels);
     setInfoChannels(channelsData);
 
-    const badgesGlobal = await (await client.badges.getGlobalBadges())._data;
+    const badgesGlobal = await (await client.badges.getGlobalBadges("fr"))._data;
     Promise.all(channelsData.map(async (channel) => {
-      const badges = await (await client.badges.getChannelBadges(channel, false))._data;
+      const badges = await (await client.badges.getChannelBadges(channel, false, "fr"))._data;
       const bitsou = await client.kraken.bits.getCheermotes(channel)
       setBits(new Map(bits.set("#" + channel.name, bitsou)))
       setBadgesChannels((p) => {
@@ -137,7 +139,8 @@ function App() {
       }
     })
 
-    chatClient.onPrivmsg(async (channel, user, message, msg) => {
+    chatClient.onMessage(async (channel, user, message, msg) => {
+      //if (msg.tags.get("reply-parent-msg-body")) console.log(msg.tags.get("reply-parent-msg-body"), msg.tags.get("reply-parent-display-name"))
       let chat = {
         id: msg.tags.get('id'),
         status: "message",
