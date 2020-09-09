@@ -47,6 +47,28 @@ function formatTipForBadge(badgeUser, chatThread) {
     return text;
 }
 
+function planSub(subInfo) {
+    let text = "";
+    switch (subInfo.plan) {
+        case "1000":
+            text = "Abonnement niveau 1"
+            break;
+
+        case "2000":
+            text = "Abonnement niveau 2"
+            break;
+
+        case "3000":
+            text = "Abonnement niveau 3"
+            break;
+
+        default:
+            text = "Abonnement " + subInfo.plan
+            break;
+    }
+    return <span style={{ fontWeight: "bold" }}>{text} ({subInfo.months}<small style={{ position: "relative", top: "-3px" }}>{subInfo.months > 1 ? <>ème</> : <>er</>}</small> mois{subInfo.streak ? " dont " + subInfo.streak + " mois consécutifs" : ""}) </span>
+}
+
 function getUserColor(login) {
     const n = login.charCodeAt(0) + login.charCodeAt(login.length - 1);
     return defaultColors[n % defaultColors.length]
@@ -128,7 +150,7 @@ function Chat() {
             }
         }
         if (mystore.activeAudio) startTcl()
-        document.body.style.margin = "10px";
+        document.body.style.margin = "10px 0";
         document.body.style.background = "#18181b";
         document.body.style.color = "#efeff1";
         window.scrollTo(0, document.body.scrollHeight);
@@ -159,6 +181,13 @@ function Chat() {
                         anvil.src = "./sounds/anvil.ogg"
                     anvil.volume = 0.1
                     anvil.play().then(() => messageAudio.play())
+                }
+
+                if (e.data.props.chatThreadChannel.status === "resub" || e.data.props.chatThreadChannel.status === "sub") {
+                    const anvil = new Audio()
+                    anvil.src = "./sounds/prepare_wololo.ogg"
+                    anvil.volume = 0.5
+                    anvil.play()
                 }
             }
             if (mystore.autoScroll) {
@@ -198,7 +227,7 @@ function Chat() {
             <div className="chat-thread" style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif", marginTop: 25 }}>
                 {mystore.chatThread.length > 0 && mystore.chatThread.map((chatThread) => {
                     const containsJapanese = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(chatThread.displayName)
-                    return <div key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", lineHeight: "1.5em" }}>
+                    return <div key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", padding: "0 10px", lineHeight: "1.5em", ...chatThread.status === "sub" ? { background: "#363694" } : {}, ...chatThread.status === "resub" ? { background: "#77260c" } : {} }}>
                         <small style={{ color: "grey", verticalAlign: "middle", marginRight: 5 }}>
                             {chatThread.ts}
                         </small>
@@ -217,6 +246,7 @@ function Chat() {
                         )}</span>}
                         <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName}{containsJapanese && <small> ({chatThread.userName})</small>}: </span>
                         <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} >
+                            {(chatThread.status === "sub" || chatThread.status === "resub") && planSub(chatThread.subInfo)}
                             {chatThread.parsed.map((value, k) => {
                                 let result;
                                 switch (value.type) {

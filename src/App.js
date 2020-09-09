@@ -223,6 +223,112 @@ function App() {
       store.setChatThread(channel, chat);
     })
 
+    chatClient.onRaid((channel, user, raidInfo, msg) => {
+      if (process.env.NODE_ENV !== 'production') console.log(msg)
+      /*let chat = {
+        id: msg.tags.get('id'),
+        status: "raid",
+        channel,
+        userName: user,
+        displayName: msg.userInfo.displayName,
+        ts: moment(msg.tags.get('tmi-sent-ts'), "x").format('LTS'),
+        ts_global: moment().valueOf(),
+        parsed: msg.isCheer ? msg.parseEmotesAndBits(bits.get(channel)) : msg.parseEmotes(),
+        userInfo: { userName: user },
+        isCheer: msg.isCheer,
+      };*/
+    })
+
+    chatClient.onSub((channel, user, subInfo, msg) => {
+      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+      let chat = {
+        id: msg.tags.get('id'),
+        status: "sub",
+        channel,
+        userName: user,
+        displayName: msg.userInfo.displayName,
+        ts: moment(msg.tags.get('tmi-sent-ts'), "x").format('LTS'),
+        ts_global: moment().valueOf(),
+        parsed: msg.parseEmotes(),
+        userInfo: { userName: user },
+        subInfo
+      };
+      if (msg.userInfo.badges.size > 0 && badgesChannelsRef.current.has(channel)) {
+        chat.badgesUser = [];
+        msg.userInfo.badges.forEach((v, k) => { chat.badgesUser = [...chat.badgesUser, { ...badgesChannelsRef.current.get(channel)[k].versions[v], id: k, value: v }] });
+      }
+      if (msg.userInfo.color) {
+        chat.userInfo = { color: msg.userInfo.color, userName: user }
+      }
+      if (msg.userInfo.badgeInfo.size > 0) {
+        chat.badgeInfo = msg.userInfo.badgeInfo
+      }
+      store.setChatThread(channel, chat);
+    })
+
+    chatClient.onSubExtend((channel, user, subInfo, msg) => {
+      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+    })
+
+    chatClient.onSubGift((channel, user, subInfo, msg) => {
+      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+    })
+
+    chatClient.onResub((channel, user, subInfo, msg) => {
+      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+      let chat = {
+        id: msg.tags.get('id'),
+        status: "resub",
+        channel,
+        userName: user,
+        displayName: msg.userInfo.displayName,
+        ts: moment(msg.tags.get('tmi-sent-ts'), "x").format('LTS'),
+        ts_global: moment().valueOf(),
+        parsed: msg.parseEmotes(),
+        userInfo: { userName: user },
+        subInfo
+      };
+      if (msg.userInfo.badges.size > 0 && badgesChannelsRef.current.has(channel)) {
+        chat.badgesUser = [];
+        msg.userInfo.badges.forEach((v, k) => { chat.badgesUser = [...chat.badgesUser, { ...badgesChannelsRef.current.get(channel)[k].versions[v], id: k, value: v }] });
+      }
+      if (msg.userInfo.color) {
+        chat.userInfo = { color: msg.userInfo.color, userName: user }
+      }
+      if (msg.userInfo.badgeInfo.size > 0) {
+        chat.badgeInfo = msg.userInfo.badgeInfo
+      }
+      store.setChatThread(channel, chat);
+    })
+
+    chatClient.onRewardGift((channel, user, rewardGiftInfo, msg) => {
+      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), rewardGiftInfo, msg)
+    })
+
+    chatClient.onStandardPayForward((channel, user, forwardInfo, msg) => {
+      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), forwardInfo, msg)
+    })
+
+    chatClient.onCommunityPayForward((channel, user, forwardInfo, msg) => {
+      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), forwardInfo, msg)
+    })
+
+    chatClient.onPrimePaidUpgrade((channel, user, subInfo, msg) => {
+      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+    })
+
+    chatClient.onGiftPaidUpgrade((channel, user, subInfo, msg) => {
+      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+    })
+
+    chatClient.onCommunitySub((channel, user, subInfo, msg) => {
+      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+    })
+
+    chatClient.onPrimeCommunityGift((channel, user, subInfo, msg) => {
+      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+    })
+
     await chatClient.connect();
   }
 
