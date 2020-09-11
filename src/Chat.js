@@ -8,6 +8,7 @@ import 'tippy.js/themes/light.css';
 import chroma from 'chroma-js';
 import { parseUrls, urlRegex } from 'parse-msg';
 import axios from "axios";
+import Modal from 'react-modal';
 
 const defaultColors = _.shuffle([
     "#FF0000",
@@ -92,12 +93,22 @@ function preloadImage(url) {
     return url
 }
 function Chat() {
+    const male = {
+        name: 'fr-FR-Wavenet-B',
+        ssmlGender: "MALE"
+    }
+    const female = {
+        name: 'fr-FR-Wavenet-A',
+        ssmlGender: "FEMALE"
+    }
     const mystore = useLocalStore(() => ({
         chatThread: [],
         autoScroll: true,
         audio: [],
         activeAudio: false,
-        title: ''
+        title: '',
+        modalIsOpen: false,
+        speaker: female,
     }));
     const player = useRef(new Audio())
 
@@ -108,8 +119,8 @@ function Chat() {
             },
             voice: {
                 languageCode: "fr-FR",
-                name: 'fr-FR-Wavenet-A',
-                ssmlGender: "FEMALE"
+                name: mystore.speaker.name,
+                ssmlGender: mystore.speaker.ssmlGender
             },
             audioConfig: {
                 audioEncoding: "OGG_OPUS",
@@ -120,12 +131,14 @@ function Chat() {
 
     let interval
     const playsound = async (init = false) => {
+        player.current.load()
         if (init) startTcl();
         if (mystore.audio.length > 0 && player.current.paused) {
             clearInterval(interval)
             const message = mystore.audio.shift() //_.find(mystore.chatThread, { 'id': mystore.audio.shift() });
             const rate = mystore.audio.length >= 5 ? mystore.audio.length >= 10 ? 3 : 2 : 1
             const tts = await getTts(`${message.join(' ').replace(urlRegex({ strict: true }), ' un lien ').replace(/merde/g, '<say-as interpret-as="expletive">merde</say-as>').replace('@', '')}`.replace(/_/g, ' '), rate);
+            player.current.volume = 0.4;
             player.current.src = 'data:audio/mpeg;base64,' + tts.audioContent
             player.current.play().then(_ => { })
                 .catch(error => {
@@ -136,19 +149,19 @@ function Chat() {
                         startTcl();
                     }
                 });
+            player.current.onended = () => {
+                if (mystore.audio.length > 0) {
+                    playsound();
+                } else {
+                    startTcl();
+                }
+            }
         }
     }
     const startTcl = () => interval = setInterval(() => playsound(), 100);
 
     useEffect(() => {
-        player.current.volume = 0.4;
-        player.current.onended = () => {
-            if (mystore.audio.length > 0) {
-                playsound();
-            } else {
-                startTcl();
-            }
-        }
+        Modal.setAppElement('body');
         if (mystore.activeAudio) startTcl()
         document.body.style.margin = "10px 0";
         document.body.style.background = "#18181b";
@@ -221,9 +234,45 @@ function Chat() {
         }
     }
 
+    const openModal = () => {
+        mystore.modalIsOpen = true;
+    }
+
+    const closeModal = () => {
+        mystore.modalIsOpen = false;
+    }
+
+    const customStyles = {
+        content: {
+            top: '50%',
+            left: '50%',
+            right: 'auto',
+            bottom: 'auto',
+            marginRight: '-50%',
+            transform: 'translate(-50%, -50%)',
+            color: 'black',
+        }
+    };
+
+    const changeSpeaker = (e) => {
+        if (e.target.checked) {
+            mystore.speaker = male
+        } else {
+            mystore.speaker = female
+        }
+    }
+
     return (
         <>
-            <div style={{ position: 'fixed', top: 0, left: 0, background: '#18181b', width: '100%', textAlign: 'center' }}><input style={{ position: 'absolute', left: 0 }} type="checkbox" onChange={handleChange} checked={mystore.activeAudio} /> <span>{mystore.title}</span></div>
+            <Modal
+                isOpen={mystore.modalIsOpen}
+                onRequestClose={closeModal}
+                style={customStyles}
+                contentLabel="Configuration"
+            >
+                <label><input type="checkbox" onChange={changeSpeaker} checked={mystore.speaker.ssmlGender === "MALE"} />Narrateur masculin</label>
+            </Modal>
+            <div style={{ position: 'fixed', top: 0, left: 0, background: '#18181b', width: '100%', textAlign: 'center' }}><input style={{ position: 'absolute', left: 0 }} type="checkbox" onChange={handleChange} checked={mystore.activeAudio} /><button onClick={openModal} style={{ background: "#353535", color: "lightgray" }}>config</button> <span>{mystore.title}</span></div>
             <div className="chat-thread" style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif", marginTop: 25 }}>
                 {mystore.chatThread.length > 0 && mystore.chatThread.map((chatThread) => {
                     const containsJapanese = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(chatThread.displayName)

@@ -110,7 +110,7 @@ function App() {
     });
 
     chatClient.onAnyMessage(async (msg) => {
-      //if (msg.tags.get('msg-id')) console.log(msg, msg.tags.get('msg-id'))
+      if (process.env.NODE_ENV !== 'production') if (msg.tags.get('msg-id')) console.log(msg, msg.tags.get('msg-id'))
       switch (msg.command) {
         case "ROOMSTATE":
           //console.log(msg.channel.value, msg.tags)
