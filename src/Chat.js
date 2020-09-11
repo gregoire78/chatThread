@@ -109,6 +109,7 @@ function Chat() {
         title: '',
         modalIsOpen: false,
         speaker: female,
+        idMessageSpeak: "",
     }));
     const player = useRef(new Audio())
 
@@ -136,8 +137,9 @@ function Chat() {
         if (mystore.audio.length > 0 && player.current.paused) {
             clearInterval(interval)
             const message = mystore.audio.shift() //_.find(mystore.chatThread, { 'id': mystore.audio.shift() });
+            mystore.idMessageSpeak = message.id
             const rate = mystore.audio.length >= 5 ? mystore.audio.length >= 10 ? 3 : 2 : 1
-            const tts = await getTts(`${message.join(' ').replace(urlRegex({ strict: true }), ' un lien ').replace(/merde/g, '<say-as interpret-as="expletive">merde</say-as>').replace('@', '')}`.replace(/_/g, ' '), rate);
+            const tts = await getTts(`${message.text.join(' ').replace(urlRegex({ strict: true }), ' un lien ').replace(/merde/g, '<say-as interpret-as="expletive">merde</say-as>').replace('@', '')}`.replace(/_/g, ' '), rate);
             player.current.volume = 0.4;
             player.current.src = 'data:audio/mpeg;base64,' + tts.audioContent
             player.current.play().then(_ => { })
@@ -146,6 +148,7 @@ function Chat() {
                     if (mystore.audio.length > 0) {
                         playsound();
                     } else {
+                        mystore.idMessageSpeak = ""
                         startTcl();
                     }
                 });
@@ -153,6 +156,7 @@ function Chat() {
                 if (mystore.audio.length > 0) {
                     playsound();
                 } else {
+                    mystore.idMessageSpeak = ""
                     startTcl();
                 }
             }
@@ -178,7 +182,7 @@ function Chat() {
                 const text = e.data.props.chatThreadChannel.parsed.map(v => v.type === 'text' ? v.text !== " " ? v.text : null : null).filter(Boolean)
                 if (!["moobot", "nightbot", "ayrob0t", "robochiotte"].includes(e.data.props.chatThreadChannel.userName) && text.length > 0) {
                     //const tts = await getTts(`${}`.replace(/_/g, ' '));
-                    if (mystore.activeAudio) mystore.audio = [...mystore.audio, text]
+                    if (mystore.activeAudio) mystore.audio = [...mystore.audio, { id: e.data.props.chatThreadChannel.id, text }]
                 }
 
                 if (e.data.props.chatThreadChannel.isCheer) {
@@ -276,7 +280,7 @@ function Chat() {
             <div className="chat-thread" style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif", marginTop: 25 }}>
                 {mystore.chatThread.length > 0 && mystore.chatThread.map((chatThread) => {
                     const containsJapanese = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(chatThread.displayName)
-                    return <div key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", padding: "0 10px", lineHeight: "1.5em", ...chatThread.status === "sub" ? { background: "#363694" } : {}, ...chatThread.status === "resub" ? { background: "#77260c" } : {} }}>
+                    return <div key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", padding: "0 10px", lineHeight: "1.5em", ...chatThread.status === "sub" ? { background: "#363694" } : {}, ...chatThread.status === "resub" ? { background: "#77260c" } : {}, ...chatThread.id === mystore.idMessageSpeak ? { outline: "1px dashed gray", outlineOffset: "3px" } : {} }}>
                         <small style={{ color: "grey", verticalAlign: "middle", marginRight: 5 }}>
                             {chatThread.ts}
                         </small>
