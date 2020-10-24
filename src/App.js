@@ -71,7 +71,10 @@ function App() {
   const [bits, setBits] = useState(new Map());
   const badgesChannelsRef = useRef(badgesChannels);
   const scrollBarRefs = useRef(new Map());
-  const [layouts, setLayouts] = useState({ ...getFromLS("layouts"), ...{ lg: _.uniqBy([...getFromLS("layouts") ? getFromLS("layouts").lg.filter((i) => channels.includes(i.i)) : [], ...generateLayout()], 'i') } });
+  const [layouts, setLayouts] = useState({
+    ...getFromLS("layouts"),
+    ...{ lg: _.uniqBy([...getFromLS("layouts") ? getFromLS("layouts").lg.filter((i) => channels.includes(i.i)) : [], ...generateLayout()], 'i') }
+  });
 
   const setChatBans = (channel, ban) => {
     const scrollBar = scrollBarRefs.current.get(channel);
@@ -140,7 +143,17 @@ function App() {
     })
 
     chatClient.onMessage(async (channel, user, message, msg) => {
-      //if (msg.tags.get("reply-parent-msg-body")) console.log(msg.tags.get("reply-parent-msg-body"), msg.tags.get("reply-parent-display-name"))
+      if (process.env.NODE_ENV !== 'production') console.log(msg)
+      /*if (msg.tags.get("reply-parent-msg-body")) {
+        console.log(msg, {
+          msgId: msg.tags.get("reply-parent-msg-id"),
+          msgBody: msg.tags.get("reply-parent-msg-body"),
+          displayName: msg.tags.get("reply-parent-display-name"),
+          userId: msg.tags.get("reply-parent-user-id"),
+          userLogin: msg.tags.get("reply-parent-user-login")
+        })
+      }*/
+
       let chat = {
         id: msg.tags.get('id'),
         status: "message",

@@ -3,6 +3,7 @@ import {
     useRef,
     useState,
 } from "react";
+import useInterval from 'use-interval'
 
 function PopupCenter(url, title, w, h) {
     const dualScreenLeft = window.screenLeft !== undefined ? window.screenLeft : window.screenX;
@@ -24,9 +25,18 @@ function PopupCenter(url, title, w, h) {
 const Popup = props => {
     const externalWindow = useRef();
     const [load, setLoad] = useState(false);
+    const [delay, setDelay] = useState(false);
+
+    useInterval(() => {
+        if (externalWindow.current && externalWindow.current.closed) {
+            setLoad(false)
+            props.closePopup();
+        }
+    }, delay)
 
     useEffect(() => {
         externalWindow.current = PopupCenter(props.url, props.title, 600, 600);
+        setDelay(50)
         externalWindow.current.addEventListener('load', () => {
             setLoad(true)
             externalWindow.current.postMessage({
@@ -37,10 +47,10 @@ const Popup = props => {
                 }))
             }, "*");
         })
-        externalWindow.current.addEventListener("beforeunload", (event) => {
+        /*externalWindow.current.addEventListener("beforeunload", (event) => {
             setLoad(false)
             props.closePopup();
-        });
+        });*/
         return function cleanup() {
             externalWindow.current.close();
             externalWindow.current = null;
