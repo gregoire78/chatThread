@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { Fragment, useEffect, useRef } from 'react';
 import { observer, useLocalStore } from 'mobx-react';
 import _ from 'lodash';
 import Tippy from '@tippyjs/react';
@@ -67,7 +67,7 @@ function planSub(subInfo) {
             text = "Abonnement " + subInfo.plan
             break;
     }
-    return <span style={{ fontWeight: "bold" }}>{text} ({subInfo.months}<small style={{ position: "relative", top: "-3px" }}>{subInfo.months > 1 ? <>ème</> : <>er</>}</small> mois{subInfo.streak ? " dont " + subInfo.streak + " mois consécutifs" : ""}) </span>
+    return <span style={{ fontWeight: "bold", verticalAlign: "middle" }}>{text} ({subInfo.months}<span style={{ position: "relative", top: "-3px" }}>{subInfo.months > 1 ? <>ème</> : <>er</>}</span> mois{subInfo.streak ? " dont " + subInfo.streak + " mois consécutifs" : ""}) </span>
 }
 
 function getUserColor(login) {
@@ -222,6 +222,7 @@ function Chat() {
         window.addEventListener('wheel', scroll, true);
         window.addEventListener('touchmove', scroll, true);
         window.addEventListener('touchend', scroll, true);
+        window.addEventListener('scroll', scroll, true);
         window.addEventListener("resize", () => {
             window.scrollTo(0, document.body.scrollHeight);
         });
@@ -280,11 +281,11 @@ function Chat() {
             <div className="chat-thread" style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif", marginTop: 25 }}>
                 {mystore.chatThread.length > 0 && mystore.chatThread.map((chatThread) => {
                     const containsJapanese = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(chatThread.displayName)
-                    return <div key={chatThread.id} style={{ overflowWrap: "break-word", margin: "10px 0", padding: "0 10px", lineHeight: "1.5em", ...chatThread.status === "sub" ? { background: "#363694" } : {}, ...chatThread.status === "resub" ? { background: "#77260c" } : {}, ...chatThread.id === mystore.idMessageSpeak ? { outline: "1px dashed gray", outlineOffset: "3px" } : {} }}>
-                        <small style={{ color: "grey", verticalAlign: "middle", marginRight: 5 }}>
+                    return <div key={chatThread.id} style={{ overflowWrap: "break-word", ...chatThread.status === "sub" ? { background: "#363694" } : {}, ...chatThread.status === "resub" ? { background: "#77260c" } : {}, ...chatThread.id === mystore.idMessageSpeak ? { outline: "1px dashed gray", outlineOffset: "3px" } : {} }}>
+                        <span style={{ color: "grey", verticalAlign: "middle", marginRight: 5, fontSize: "10px" }}>
                             {chatThread.ts}
-                        </small>
-                        {chatThread.badgesUser && <span>{chatThread.badgesUser.map((badgeUser, k) =>
+                        </span>
+                        {chatThread.badgesUser && <>{chatThread.badgesUser.map((badgeUser, k) =>
                             <Tippy
                                 key={k}
                                 content={formatTipForBadge(badgeUser, chatThread)}
@@ -296,57 +297,60 @@ function Chat() {
                                     src={badgeUser && badgeUser.image_url_1x}
                                     alt="" />
                             </Tippy>
-                        )}</span>}
-                        <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle" }}>{chatThread.displayName}{containsJapanese && <small> ({chatThread.userName})</small>}: </span>
-                        <span style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { verticalAlign: "middle" }} >
-                            {(chatThread.status === "sub" || chatThread.status === "resub") && planSub(chatThread.subInfo)}
-                            {chatThread.parsed.map((value, k) => {
-                                let result;
-                                switch (value.type) {
-                                    case "text":
-                                        result = parseUrls(value.text).map((v, k) => {
-                                            let text;
-                                            switch (v.type) {
-                                                case "link":
-                                                    text = <a key={k} target='_blank' rel="noopener noreferrer" style={chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" } : { color: "#efeff1", verticalAlign: "middle" }} href={v.url} >{v.text}</a>
-                                                    break;
+                        )}</>}
+                        <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle", position: "relative", top: "1px" }}>{chatThread.displayName}</span>
+                        {containsJapanese && <small style={{ color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" }}> ({chatThread.userName})</small>}
+                        <span style={{ verticalAlign: "middle" }}>: </span>
+                        {(chatThread.status === "sub" || chatThread.status === "resub") && planSub(chatThread.subInfo)}
+                        {chatThread.parsed.map((value, k) => {
+                            let result;
+                            switch (value.type) {
+                                case "text":
+                                    result = parseUrls(value.text).map((v, k) => {
+                                        let text;
+                                        switch (v.type) {
+                                            case "link":
+                                                text = <a key={k} target='_blank' rel="noopener noreferrer" style={{ ...chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo) } : { color: "#efeff1" }, verticalAlign: "middle" }} href={v.url} >{v.text}</a>
+                                                break;
 
-                                                default:
-                                                    text = v.text;
-                                                    break;
-                                            }
-                                            return text;
-                                        });
-                                        break;
+                                            default:
+                                                text = <span key={k} style={{ ...chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo) } : {}, verticalAlign: "middle" }}>{v.text}</span>;
+                                                break;
+                                        }
+                                        return text;
+                                    });
+                                    break;
 
-                                    case "emote":
-                                        result = <Tippy
-                                            key={k}
-                                            content={<div style={{ textAlign: 'center' }}><img src={preloadImage(`https://static-cdn.jtvnw.net/emoticons/v1/${value.id}/3.0`)} alt={value.name} /><p>{value.name}</p></div>}
-                                            theme="light"
-                                            placement="top"
-                                            trigger="click"
-                                            offset={[0, 20]}
-                                            followCursor={false}
-                                            plugins={[followCursor]}
-                                        >
-                                            <div style={{ height: "1em", verticalAlign: "middle", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-                                                <img className="emoticon" src={`https://static-cdn.jtvnw.net/emoticons/v1/${value.id}/1.0`} alt={value.name} />
-                                            </div>
-                                        </Tippy>
-                                        break;
+                                case "emote":
+                                    result = <Tippy
+                                        key={k}
+                                        content={<div style={{ textAlign: 'center' }}><img src={preloadImage(`https://static-cdn.jtvnw.net/emoticons/v1/${value.id}/3.0`)} alt={value.name} /><p>{value.name}</p></div>}
+                                        theme="light"
+                                        placement="top"
+                                        trigger="click"
+                                        offset={[0, 20]}
+                                        followCursor={false}
+                                        plugins={[followCursor]}
+                                    >
+                                        <span style={{ height: "17px", verticalAlign: "middle", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                                            <img className="emoticon" src={`https://static-cdn.jtvnw.net/emoticons/v1/${value.id}/1.0`} alt={value.name} />
+                                        </span>
+                                    </Tippy>
+                                    break;
 
-                                    case "cheer":
-                                        result = <><div key={k} style={{ height: "1em", verticalAlign: "middle", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                                case "cheer":
+                                    result = <Fragment key={k}>
+                                        <span style={{ height: "17px", verticalAlign: "middle", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
                                             <img className="emoticon" src={value.displayInfo.url} alt={value.name} />
-                                        </div> <span style={{ color: value.displayInfo.color }}>{value.amount}</span></>
-                                        break;
+                                        </span>
+                                        <span style={{ color: value.displayInfo.color, verticalAlign: "middle" }}>{value.amount}</span>
+                                    </Fragment>
+                                    break;
 
-                                    default: break;
-                                }
-                                return result;
-                            })}
-                        </span>
+                                default: break;
+                            }
+                            return result;
+                        })}
                     </div>
                 })}
             </div>
