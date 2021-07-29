@@ -113,7 +113,7 @@ function App() {
     });
 
     chatClient.onAnyMessage(async (msg) => {
-      if (process.env.NODE_ENV !== 'production') if (msg.tags.get('msg-id')) console.log(msg, msg.tags.get('msg-id'))
+      //if (process.env.NODE_ENV !== 'production') if (msg.tags.get('msg-id')) console.log(msg, msg.tags.get('msg-id'))
       switch (msg.command) {
         case "ROOMSTATE":
           //console.log(msg.channel.value, msg.tags)
@@ -143,7 +143,7 @@ function App() {
     })
 
     chatClient.onMessage(async (channel, user, message, msg) => {
-      if (process.env.NODE_ENV !== 'production') console.log(msg)
+      //if (process.env.NODE_ENV !== 'production') console.log(msg)
       /*if (msg.tags.get("reply-parent-msg-body")) {
         console.log(msg, {
           msgId: msg.tags.get("reply-parent-msg-id"),
@@ -237,7 +237,7 @@ function App() {
     })
 
     chatClient.onRaid((channel, user, raidInfo, msg) => {
-      if (process.env.NODE_ENV !== 'production') console.log(msg)
+      if (process.env.NODE_ENV !== 'production') console.log(msg, raidInfo)
       /*let chat = {
         id: msg.tags.get('id'),
         status: "raid",
@@ -253,7 +253,7 @@ function App() {
     })
 
     chatClient.onSub((channel, user, subInfo, msg) => {
-      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+      //if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
       let chat = {
         id: msg.tags.get('id'),
         status: "sub",
@@ -280,15 +280,15 @@ function App() {
     })
 
     chatClient.onSubExtend((channel, user, subInfo, msg) => {
-      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+      //if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
     })
 
     chatClient.onSubGift((channel, user, subInfo, msg) => {
-      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+      //if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
     })
 
     chatClient.onResub((channel, user, subInfo, msg) => {
-      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+      //if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
       let chat = {
         id: msg.tags.get('id'),
         status: "resub",
@@ -315,31 +315,31 @@ function App() {
     })
 
     chatClient.onRewardGift((channel, user, rewardGiftInfo, msg) => {
-      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), rewardGiftInfo, msg)
+      //if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), rewardGiftInfo, msg)
     })
 
     chatClient.onStandardPayForward((channel, user, forwardInfo, msg) => {
-      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), forwardInfo, msg)
+      //if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), forwardInfo, msg)
     })
 
     chatClient.onCommunityPayForward((channel, user, forwardInfo, msg) => {
-      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), forwardInfo, msg)
+      //if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), forwardInfo, msg)
     })
 
     chatClient.onPrimePaidUpgrade((channel, user, subInfo, msg) => {
-      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+      //if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
     })
 
     chatClient.onGiftPaidUpgrade((channel, user, subInfo, msg) => {
-      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+      //if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
     })
 
     chatClient.onCommunitySub((channel, user, subInfo, msg) => {
-      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+      //if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
     })
 
     chatClient.onPrimeCommunityGift((channel, user, subInfo, msg) => {
-      if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
+      //if (process.env.NODE_ENV !== 'production') console.log(msg.tags.get("msg-id"), subInfo, msg)
     })
 
     await chatClient.connect();

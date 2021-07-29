@@ -298,7 +298,7 @@ function Chat() {
                                     alt="" />
                             </Tippy>
                         )}</>}
-                        <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle", position: "relative", top: "1px" }}>{chatThread.displayName}</span>
+                        <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle", lineHeight: "23px" }}>{chatThread.displayName}</span>
                         {containsJapanese && <small style={{ color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" }}> ({chatThread.userName})</small>}
                         <span style={{ verticalAlign: "middle" }}>: </span>
                         {(chatThread.status === "sub" || chatThread.status === "resub") && planSub(chatThread.subInfo)}
