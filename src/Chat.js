@@ -1,5 +1,5 @@
 import React, { Fragment, useEffect, useRef } from 'react';
-import { observer, useLocalStore } from 'mobx-react';
+import { observer, useLocalObservable } from 'mobx-react';
 import _ from 'lodash';
 import Tippy from '@tippyjs/react';
 import { followCursor } from 'tippy.js/headless'
@@ -9,6 +9,7 @@ import chroma from 'chroma-js';
 import { parseUrls, urlRegex } from 'parse-msg';
 import axios from "axios";
 import Modal from 'react-modal';
+import { toJS } from 'mobx';
 
 const defaultColors = _.shuffle([
     "#FF0000",
@@ -28,21 +29,22 @@ const defaultColors = _.shuffle([
     "#00FF7F"
 ]);
 
-function formatTipForBadge(badgeUser, chatThread) {
+function formatTipForBadge(badgeUser, badgeInfo) {
     let text = "";
+    console.log(badgeInfo)
     switch (badgeUser.id) {
         case "subscriber":
             const badgeType = badgeUser.value > 0 ? badgeUser.value >= 2000 ? badgeUser.value >= 3000 ? badgeUser.value - 3000 : badgeUser.value - 2000 : badgeUser.value : 0
             const levelBadge = badgeType > 0 ? `des ${badgeType} mois` : 'basique'
-            text = <b>Abonné(e) depuis {chatThread.badgeInfo.subscriber} mois <small>(badge {levelBadge} {badgeUser.value >= 2000 ? badgeUser.value >= 3000 ? `de niveau 3` : `de niveau 2` : ""})</small></b>
+            text = <b>Abonné(e) depuis {badgeInfo.get('subscriber')} mois <small>(badge {levelBadge} {badgeUser.value >= 2000 ? badgeUser.value >= 3000 ? `de niveau 3` : `de niveau 2` : ""})</small></b>
             break;
 
         case "founder":
-            text = <b>Fondateur, abonné(e) depuis {chatThread.badgeInfo.founder} mois</b>
+            text = <b>Fondateur, abonné(e) depuis {badgeInfo.get('founder')} mois</b>
             break;
 
         default:
-            text = <b>{badgeUser.title}</b>
+            text = <b>{badgeUser.id + " " + badgeUser.value}</b>
             break;
     }
     return text;
@@ -101,7 +103,7 @@ function Chat() {
         name: 'fr-FR-Wavenet-A',
         ssmlGender: "FEMALE"
     }
-    const mystore = useLocalStore(() => ({
+    const mystore = useLocalObservable(() => ({
         chatThread: [],
         autoScroll: true,
         audio: [],
@@ -208,12 +210,14 @@ function Chat() {
                 }
             }
             if (mystore.autoScroll) {
-                window.scrollTo(0, document.body.scrollHeight);
+                setTimeout(() => {
+                    window.scrollTo(0, document.body.scrollHeight);
+                }, 0)
             }
         }, false);
         window.opener.onbeforeunload = () => window.close()
         const scroll = (e) => {
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+            if ((window.innerHeight + window.scrollY + 100) >= document.body.offsetHeight) {
                 mystore.autoScroll = true;
             } else {
                 mystore.autoScroll = false;
@@ -224,7 +228,9 @@ function Chat() {
         window.addEventListener('touchend', scroll, true);
         window.addEventListener('scroll', scroll, true);
         window.addEventListener("resize", () => {
-            window.scrollTo(0, document.body.scrollHeight);
+            setTimeout(() => {
+                window.scrollTo(0, document.body.scrollHeight);
+            }, 0);
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -279,16 +285,16 @@ function Chat() {
             </Modal>
             <div style={{ position: 'fixed', top: 0, left: 0, background: '#18181b', width: '100%', textAlign: 'center' }}><input style={{ position: 'absolute', left: 0 }} type="checkbox" onChange={handleChange} checked={mystore.activeAudio} /><button onClick={openModal} style={{ background: "#353535", color: "lightgray" }}>config</button> <span>{mystore.title}</span></div>
             <div className="chat-thread" style={{ fontFamily: "Roobert,Helvetica Neue,Helvetica,Arial,sans-serif", marginTop: 25 }}>
-                {mystore.chatThread.length > 0 && mystore.chatThread.map((chatThread) => {
-                    const containsJapanese = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(chatThread.displayName)
-                    return <div key={chatThread.id} style={{ overflowWrap: "break-word", ...chatThread.status === "sub" ? { background: "#363694" } : {}, ...chatThread.status === "resub" ? { background: "#77260c" } : {}, ...chatThread.id === mystore.idMessageSpeak ? { outline: "1px dashed gray", outlineOffset: "3px" } : {} }}>
+                {mystore.chatThread.length > 0 && mystore.chatThread.map((ct) => {
+                    const containsJapanese = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(ct.displayName)
+                    return <div key={ct.id} style={{ overflowWrap: "break-word", ...ct.status === "sub" ? { background: "#363694" } : {}, ...ct.status === "resub" ? { background: "#77260c" } : {}, ...ct.id === mystore.idMessageSpeak ? { outline: "1px dashed gray", outlineOffset: "3px" } : {} }}>
                         <span style={{ color: "grey", verticalAlign: "middle", marginRight: 5, fontSize: "10px" }}>
-                            {chatThread.ts}
+                            {ct.ts}
                         </span>
-                        {chatThread.badgesUser && <>{chatThread.badgesUser.map((badgeUser, k) =>
+                        {ct.badgesUser && <>{ct.badgesUser.map((badgeUser, k) =>
                             <Tippy
                                 key={k}
-                                content={formatTipForBadge(badgeUser, chatThread)}
+                                content={formatTipForBadge(badgeUser, new Map(toJS(ct.badgeInfo)))}
                                 theme="light"
                                 placement="top-start"
                                 offset={[-10, 10]}
@@ -298,11 +304,11 @@ function Chat() {
                                     alt="" />
                             </Tippy>
                         )}</>}
-                        <span style={{ color: convertUserColor(chatThread.userInfo), fontWeight: "bold", verticalAlign: "middle", lineHeight: "23px" }}>{chatThread.displayName}</span>
-                        {containsJapanese && <small style={{ color: convertUserColor(chatThread.userInfo), verticalAlign: "middle" }}> ({chatThread.userName})</small>}
+                        <span style={{ color: convertUserColor(ct.userInfo), fontWeight: "bold", verticalAlign: "middle", lineHeight: "23px" }}>{ct.displayName}</span>
+                        {containsJapanese && <small style={{ color: convertUserColor(ct.userInfo), verticalAlign: "middle" }}> ({ct.userName})</small>}
                         <span style={{ verticalAlign: "middle" }}>: </span>
-                        {(chatThread.status === "sub" || chatThread.status === "resub") && planSub(chatThread.subInfo)}
-                        {chatThread.parsed.map((value, k) => {
+                        {(ct.status === "sub" || ct.status === "resub") && planSub(ct.subInfo)}
+                        {ct.parsed.map((value, k) => {
                             let result;
                             switch (value.type) {
                                 case "text":
@@ -310,11 +316,11 @@ function Chat() {
                                         let text;
                                         switch (v.type) {
                                             case "link":
-                                                text = <a key={k} target='_blank' rel="noopener noreferrer" style={{ ...chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo) } : { color: "#efeff1" }, verticalAlign: "middle" }} href={v.url} >{v.text}</a>
+                                                text = <a key={k} target='_blank' rel="noopener noreferrer" style={{ ...ct.status === "action" ? { color: convertUserColor(ct.userInfo) } : { color: "#efeff1" }, verticalAlign: "middle" }} href={v.url} >{v.text}</a>
                                                 break;
 
                                             default:
-                                                text = <span key={k} style={{ ...chatThread.status === "action" ? { color: convertUserColor(chatThread.userInfo) } : {}, verticalAlign: "middle" }}>{v.text}</span>;
+                                                text = <span key={k} style={{ ...ct.status === "action" ? { color: convertUserColor(ct.userInfo) } : {}, verticalAlign: "middle" }}>{v.text}</span>;
                                                 break;
                                         }
                                         return text;

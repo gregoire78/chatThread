@@ -1,3 +1,5 @@
+import { runInAction } from 'mobx';
+
 export function createStore() {
     // note the use of this which refers to observable instance of the store
     return {
@@ -9,12 +11,21 @@ export function createStore() {
             return this.friends.filter(friend => friend.isSingle)
         },
         setChatThread(channel, chat) {
-            const y = this.chatThreads.get(channel);
-            this.chatThreads = new Map(this.chatThreads).set(channel, y ? [...y.slice(-500), chat] : [chat]);
+            runInAction(() => {
+                const y = this.chatThreads.get(channel);
+                this.chatThreads = new Map(this.chatThreads).set(channel, y ? [...y.slice(-500), chat] : [chat])
+            });
         },
         setChatBan(channel, ban) {
-            const y = this.chatBans.get(channel);
-            this.chatBans = new Map(this.chatBans).set(channel, y ? [...y, ban] : [ban]);
+            runInAction(() => {
+                const y = this.chatBans.get(channel);
+                this.chatBans = new Map(this.chatBans).set(channel, y ? [...y, ban] : [ban]);
+            });
+        },
+        setRooms(channel) {
+            runInAction(() => {
+                this.rooms = [...this.rooms, channel]
+            });
         },
         get getFriends() {
             return this.friends;

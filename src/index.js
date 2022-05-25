@@ -1,23 +1,29 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import 'mobx-react/batchingForReactDom'
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './index.css';
 import App from './App';
 import Chat from './Chat';
 import * as serviceWorker from './serviceWorker';
 import { StoreProvider } from './store';
 
-ReactDOM.render(
+const rootElement = document.getElementById('root');
+const root = createRoot(rootElement);
+
+root.render(
     <StoreProvider>
-        <Router basename="/">
-            <Switch>
-                <Route path="/chat/:channel?" component={Chat} />
-                <Route path="/:channels?" component={App} />
-            </Switch>
-        </Router>
-    </StoreProvider>,
-    document.getElementById('root')
+        <BrowserRouter>
+            <Routes>
+                <Route path='chat' element={<Chat />}>
+                    <Route path=":channel" element={<Chat />} />
+                </Route>
+                <Route path='/' element={<App />}>
+                    <Route path=":channels" element={<App />} />
+                </Route>
+            </Routes>
+        </BrowserRouter>
+    </StoreProvider>
 );
 
 // If you want your app to work offline and load faster, you can change

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Scrollbar } from 'react-scrollbars-custom';
-import { withRouter } from 'react-router-dom';
 import moment from 'moment';
 import Popup from './Popup';
 
@@ -87,4 +86,4 @@ function Panel({ channel, chatThreads, scrollBarRefs, chatBans, infosStream, inf
   )
 }
 
-export default withRouter(Panel);
+export default Panel;
