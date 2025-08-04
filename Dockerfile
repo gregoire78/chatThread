@@ -1,30 +1,30 @@
 # Stage 1 - the build process
-FROM node:lts-alpine as build-deps
-LABEL maintainer="gregoire@joncour.tech"
+FROM node:lts-alpine AS build-deps
 
 WORKDIR /usr/src/app
+
+ARG REACT_APP_TWITCH_CLIENTID
+ARG REACT_APP_TWITCH_CLIENTSECRET
+ARG REACT_APP_TTS
+ENV REACT_APP_TWITCH_CLIENTID=${REACT_APP_TWITCH_CLIENTID}
+ENV REACT_APP_TWITCH_CLIENTSECRET=${REACT_APP_TWITCH_CLIENTSECRET}
+ENV REACT_APP_TTS=${REACT_APP_TTS}
+ENV GENERATE_SOURCEMAP=false
+
 ENV NODE_ENV=production
 COPY packages ./
 COPY package*.json ./
-RUN npm install --silent
+RUN npm ci
 COPY . .
 
 RUN npm run build --production
 
-# Stage 2 - the production environment
-FROM nginx:alpine
-LABEL maintainer="gregoire@joncour.tech"
+# Stage 2 - the production environment with Caddy
+FROM caddy:alpine
+LABEL maintainer="gregoire@joncour.dev"
 
-COPY --from=build-deps /usr/src/app/build /usr/share/nginx/html
-RUN echo 'server_tokens off;' > /etc/nginx/conf.d/server_tokens.conf
-RUN echo $'server {\n\
-    listen 80;\n\
-    location / { \n\
-    root /usr/share/nginx/html;\n\
-    index index.html index.htm;\n\
-    try_files $uri $uri/ /index.html; \n\
-    }\n\
-    }'\
-    > /etc/nginx/conf.d/default.conf
+# Copy built files to Caddy's web root
+COPY --from=build-deps /usr/src/app/build /usr/share/caddy
+
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["caddy", "file-server", "--root", "/usr/share/caddy", "--precompressed", "gzip", "--listen", ":80"]

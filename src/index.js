@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import 'mobx-react/batchingForReactDom'
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Route, Routes } from 'react-router-dom';
 import './index.css';
 import App from './App';
 import Chat from './Chat';
@@ -13,7 +13,7 @@ const root = createRoot(rootElement);
 
 root.render(
     <StoreProvider>
-        <BrowserRouter>
+        <HashRouter>
             <Routes>
                 <Route path='chat' element={<Chat />}>
                     <Route path=":channel" element={<Chat />} />
@@ -22,7 +22,7 @@ root.render(
                     <Route path=":channels" element={<App />} />
                 </Route>
             </Routes>
-        </BrowserRouter>
+        </HashRouter>
     </StoreProvider>
 );
 

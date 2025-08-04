@@ -31,7 +31,7 @@ const defaultColors = _.shuffle([
 
 function formatTipForBadge(badgeUser, badgeInfo) {
     let text = "";
-    console.log(badgeInfo)
+    //console.log(badgeInfo)
     switch (badgeUser.id) {
         case "subscriber":
             const badgeType = badgeUser.value > 0 ? badgeUser.value >= 2000 ? badgeUser.value >= 3000 ? badgeUser.value - 3000 : badgeUser.value - 2000 : badgeUser.value : 0
