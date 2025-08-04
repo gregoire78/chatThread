@@ -49,7 +49,6 @@ jobs:
           push: true
           tags: |
             registry.joncour.xyz/chatthread:latest
-            rregistry.joncour.xyz/chatthread:${{ steps.vars.outputs.sha_short }}
           build-args: |
             "REACT_APP_TWITCH_CLIENTID=${{ secrets.REACT_APP_TWITCH_CLIENTID }}"
             "REACT_APP_TWITCH_CLIENTSECRET=${{ secrets.REACT_APP_TWITCH_CLIENTSECRET }}"
